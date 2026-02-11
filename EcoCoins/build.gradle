@@ -29,6 +29,15 @@ tasks.withType(JavaCompile).configureEach {
 
 jar {
     archiveBaseName.set("EcoCoins")
+
+    // Empaquetar dependencias runtime (ej. jackson) dentro del jar del plugin
+    // para evitar ClassNotFound en el loader del servidor.
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
     manifest {
         attributes(
             "Implementation-Title": "EcoCoins",
