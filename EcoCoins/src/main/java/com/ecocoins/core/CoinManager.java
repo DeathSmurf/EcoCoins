@@ -63,17 +63,39 @@ public final class CoinManager {
         return Optional.empty();
     }
 
-public Optional<CoinDefinition> findByItemId(String itemId) {
-    if (itemId == null) return Optional.empty();
-    String id = itemId.trim();
-    for (CoinDefinition c : coins) {
-        if (c.name_item != null && id.equals(c.name_item.trim())) return Optional.of(c);
+    public Optional<CoinDefinition> findByItemId(String itemId) {
+        if (itemId == null) return Optional.empty();
+
+        String id = itemId.trim();
+        String normalizedId = normalizeItemId(id);
+
+        for (CoinDefinition c : coins) {
+            if (c.name_item == null) continue;
+
+            String configured = c.name_item.trim();
+            if (configured.isEmpty()) continue;
+
+            if (id.equals(configured)) return Optional.of(c);
+            if (normalizedId.equals(normalizeItemId(configured))) return Optional.of(c);
+        }
+
+        return Optional.empty();
     }
-    return Optional.empty();
-}
 
     public boolean isEcoCoinItemId(String itemId) {
         if (itemId == null) return false;
-        return coinItemIds.contains(itemId.trim());
+
+        String id = itemId.trim();
+        if (coinItemIds.contains(id)) return true;
+
+        return coinItemIds.contains(normalizeItemId(id));
+    }
+
+    private static String normalizeItemId(String itemId) {
+        int namespaceSeparator = itemId.indexOf(':');
+        if (namespaceSeparator >= 0 && namespaceSeparator + 1 < itemId.length()) {
+            return itemId.substring(namespaceSeparator + 1).trim();
+        }
+        return itemId;
     }
 }

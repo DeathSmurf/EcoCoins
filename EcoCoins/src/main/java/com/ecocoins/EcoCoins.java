@@ -49,11 +49,20 @@ public final class EcoCoins extends JavaPlugin {
             // TheEconomy via reflection (no crashea si falta)
             this.economy = new TheEconomyService(getLogger());
 
-            // ✅ Cargar aquí (no depender de start)
-            languageManager.loadAll();
-            coinManager.loadAll();
+            // Carga tolerante: si hay JSON roto, no bloquear el registro de /change.
+            try {
+                languageManager.loadAll();
+            } catch (Throwable t) {
+                getLogger().at(Level.WARNING).log("[EcoCoins] Error cargando Languages. Continúo para no perder /change: " + t);
+            }
 
-            // ✅ Registrar /change aquí (para que exista siempre)
+            try {
+                coinManager.loadAll();
+            } catch (Throwable t) {
+                getLogger().at(Level.WARNING).log("[EcoCoins] Error cargando Coins. Continúo para no perder /change: " + t);
+            }
+
+            // Registrar /change aunque falle la carga de configuración.
             getCommandRegistry().registerCommand(
                     new ChangeMoneyCommand(languageManager, coinManager, economy)
             );
