@@ -2,7 +2,7 @@
   "name_item": "Coin_Silver",
   "money_name": {
     "primary": "silver",
-    "aliases": ["plata","s",]
+    "aliases": ["plata","s"]
   },
   "pay": 50,
   "stack_item": 10

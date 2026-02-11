@@ -18,8 +18,6 @@ repositories {
 sourceSets {
     main {
         resources {
-            // src/main/resources ya viene por defecto en el sourceSet main.
-            // Agregamos solo assetpack para evitar duplicar manifest.json.
             srcDir "src/main/assetpack"
         }
     }
