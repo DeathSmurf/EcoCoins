@@ -1,0 +1,9 @@
+{
+  "name_item": "Coin_Mithril",
+  "money_name": {
+    "primary": "mithril",
+    "aliases": ["m","l",]
+  },
+  "pay": 10000,
+  "stack_item": 10
+}

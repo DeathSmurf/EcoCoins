@@ -1,0 +1,7 @@
+{
+  "command.change.success": "&aCompra exitosa: &e{amount} &7x &6{moneyName} &7(-&e{cost}&7)",
+  "command.change.not_enough_money": "&cNo tienes suficiente dinero. &7Costo: &e{cost}",
+  "command.change.inventory_full": "&cNo tienes espacio en el inventario.",
+  "command.change.not_found": "&cLa moneda {moneyName} no existe.",
+  "command.change.invalid_amount": "&cCantidad inválida (&7{amount}&c). Debe ser mayor que 0."
+}
