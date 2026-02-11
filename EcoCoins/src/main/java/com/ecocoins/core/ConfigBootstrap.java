@@ -58,8 +58,8 @@ public final class ConfigBootstrap {
     public void ensureEditableExternalFolder() {
         try {
             Files.createDirectories(externalPluginFolder);
-            copyFromJarNoOverwrite(ASSETPACK_PLUGIN_PREFIX + "Coins/", externalPluginFolder.resolve("Coins"));
-            copyFromJarNoOverwrite(ASSETPACK_PLUGIN_PREFIX + "Languages/", externalPluginFolder.resolve("Languages"));
+            copyFromJarNoOverwriteWithFallback(ASSETPACK_PLUGIN_PREFIX + "Coins/", externalPluginFolder.resolve("Coins"));
+            copyFromJarNoOverwriteWithFallback(ASSETPACK_PLUGIN_PREFIX + "Languages/", externalPluginFolder.resolve("Languages"));
         } catch (Exception e) {
             logger.at(Level.WARNING).log(
                     "[EcoCoins] No pude exportar configs (Coins/Languages). Continúo igual. Causa: %s",
@@ -75,8 +75,8 @@ public final class ConfigBootstrap {
             Files.createDirectories(externalAssetPackFolder);
 
             // Exportar solo las carpetas necesarias (EcoCoins/Coins y EcoCoins/Languages)
-            copyFromJarNoOverwrite(ASSETPACK_PLUGIN_PREFIX + "EcoCoins/Coins/", externalAssetPackFolder.resolve("EcoCoins/Coins"));
-            copyFromJarNoOverwrite(ASSETPACK_PLUGIN_PREFIX + "EcoCoins/Languages/", externalAssetPackFolder.resolve("EcoCoins/Languages"));
+            copyFromJarNoOverwriteWithFallback(ASSETPACK_PLUGIN_PREFIX + "Coins/", externalAssetPackFolder.resolve("EcoCoins/Coins"));
+            copyFromJarNoOverwriteWithFallback(ASSETPACK_PLUGIN_PREFIX + "Languages/", externalAssetPackFolder.resolve("EcoCoins/Languages"));
 
         } catch (Exception e) {
             logger.at(Level.WARNING).log(
@@ -86,7 +86,16 @@ public final class ConfigBootstrap {
         }
     }    
 
-    private void copyFromJarNoOverwrite(String jarPrefix, Path targetDir) throws Exception {
+
+    private void copyFromJarNoOverwriteWithFallback(String jarPrefix, Path targetDir) throws Exception {
+        int copied = copyFromJarNoOverwrite(jarPrefix, targetDir);
+        if (copied > 0 || jarPrefix.startsWith("assetpack/")) return;
+
+        String fallbackPrefix = "assetpack/" + jarPrefix;
+        copyFromJarNoOverwrite(fallbackPrefix, targetDir);
+    }
+
+    private int copyFromJarNoOverwrite(String jarPrefix, Path targetDir) throws Exception {
         Files.createDirectories(targetDir);
 
         Path jarPath = locateOwnJar();
@@ -95,7 +104,7 @@ public final class ConfigBootstrap {
                     "[EcoCoins] No pude ubicar el JAR del plugin; no exportaré: %s",
                     jarPrefix
             );
-            return;
+            return 0;
         }
 
         int matched = 0;
@@ -141,7 +150,7 @@ public final class ConfigBootstrap {
                     "[EcoCoins] No encontré entradas en el JAR para el prefijo: %s (¿path mal escrito?)",
                     jarPrefix
             );
-            return;
+            return 0;
         }
 
         // Log útil: muestra si realmente copió algo o si ya estaba todo
@@ -156,6 +165,8 @@ public final class ConfigBootstrap {
                     jarPrefix, targetDir
             );
         }
+
+        return copied;
     }
 
     /**

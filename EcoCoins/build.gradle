@@ -15,6 +15,15 @@ repositories {
     mavenCentral()
 }
 
+sourceSets {
+    main {
+        resources {
+            srcDir "src/main/resources"
+            srcDir "src/main/assetpack"
+        }
+    }
+}
+
 dependencies {
     compileOnly files("libs/HytaleServer.jar")
     compileOnly files("libs/EconomySystem-1.0.8.1-beta.jar")
