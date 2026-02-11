@@ -1,0 +1,19 @@
+{
+  "Group": "pmnoam",
+  "Name": "EcoCoins",
+  "Version": "1.0.2",
+  "Description": "EcoCoins - monedas físicas + integración con TheEconomy (dinero virtual)",
+  "Authors": [
+    {
+      "Name": "SmoorPh"
+    }
+  ],
+  "Website": "",
+  "Main": "com.ecocoins.EcoCoins",
+  "ServerVersion": "*",
+  "IncludesAssetPack": true,
+  "AssetPack": {
+    "CoinConfig": "EcoCoins/Coins",
+    "LanguageConfig": "EcoCoins/Languages"
+  }
+}
