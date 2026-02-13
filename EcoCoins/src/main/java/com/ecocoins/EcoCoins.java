@@ -71,6 +71,7 @@ public final class EcoCoins extends JavaPlugin {
                     "[EcoCoins] setup OK. coins=" + coinManager.countCoins()
                             + " langs=" + languageManager.countLanguages()
                             + " theEconomy=" + economy.isAvailable()
+                            + " interactionTrigger=Secondary"
                             + " (/change registrado)"
             );
 
@@ -86,7 +87,7 @@ public final class EcoCoins extends JavaPlugin {
     @Override
     protected void start() {
         // Si el server no llama start() por alguna razón, /change igual existe (lo registramos en setup()).
-        getLogger().at(Level.INFO).log("[EcoCoins] start()...");
+        getLogger().at(Level.INFO).log("[EcoCoins] start()... interactionTrigger=Secondary");
 
         try {
             // =========================
@@ -154,12 +155,9 @@ public final class EcoCoins extends JavaPlugin {
     }
 
     private static boolean isCoinUseInteraction(InteractionType type) {
-        return type == InteractionType.Primary
-                || type == InteractionType.Secondary
-                || type == InteractionType.Use
-                || type == InteractionType.Ability1
-                || type == InteractionType.Ability2
-                || type == InteractionType.Ability3;
+        // Este servidor procesa monedas físicas únicamente mediante Secondary,
+        // porque los items registrados en el mod.zip usan ese trigger.
+        return type == InteractionType.Secondary;
     }
 
     private static String resolveItemId(ItemStack stack) {
