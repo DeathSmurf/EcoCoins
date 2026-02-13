@@ -139,7 +139,8 @@ public final class EcoCoins extends JavaPlugin {
                 }
 
                 // depositar dinero virtual
-                boolean deposited = economy.add(uuid, coin.pay);
+                String username = player.getPlayerRef().getUsername();
+                boolean deposited = economy.add(uuid, username, coin.pay);
                 if (!deposited) {
                     // rollback best-effort
                     InventoryUtil.addItemId(player.getInventory(), itemId, 1);
