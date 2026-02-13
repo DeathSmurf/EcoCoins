@@ -154,9 +154,9 @@ public final class EcoCoins extends JavaPlugin {
     }
 
     private static boolean isCoinUseInteraction(InteractionType type) {
-        // Compatibilidad: algunos asset packs registran la interacción de moneda en
-        // Secondary en lugar de Use. Aceptamos ambos triggers.
-        return type == InteractionType.Use || type == InteractionType.Secondary;
+        // EcoCoins procesa el "uso" de la moneda solo cuando el item dispara
+        // la interacción Use desde el asset pack (Interactions -> Use).
+        return type == InteractionType.Use;
     }
 
     private static String resolveItemId(ItemStack stack) {
