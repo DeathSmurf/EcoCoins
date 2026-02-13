@@ -17,7 +17,7 @@ public final class InventoryUtil {
         AtomicInteger total = new AtomicInteger(0);
         all.forEach((slot, stack) -> {
             if (stack == null || stack.isEmpty()) return;
-            if (matchesItemId(stack.getItemId(), itemId)) total.addAndGet(stack.getQuantity());
+            if (matchesItemId(resolveItemId(stack), itemId)) total.addAndGet(stack.getQuantity());
         });
         return total.get();
     }
@@ -44,7 +44,7 @@ public final class InventoryUtil {
         AtomicInteger remaining = new AtomicInteger(amount);
         all.forEach((slot, stack) -> {
             if (remaining.get() <= 0 || stack == null || stack.isEmpty()) return;
-            String stackId = stack.getItemId();
+            String stackId = resolveItemId(stack);
             if (!matchesItemId(stackId, itemId)) return;
 
             int take = Math.min(stack.getQuantity(), remaining.get());
@@ -79,6 +79,20 @@ public final class InventoryUtil {
         if (amount <= 0) return true;
         ItemContainer all = inv.getCombinedEverything();
         return all.canAddItemStack(new ItemStack(itemId, amount));
+    }
+
+
+    private static String resolveItemId(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return null;
+
+        String direct = stack.getItemId();
+        if (direct != null && !direct.isBlank()) return direct;
+
+        if (stack.getItem() != null && stack.getItem().getId() != null && !stack.getItem().getId().isBlank()) {
+            return stack.getItem().getId();
+        }
+
+        return null;
     }
 
     private static boolean matchesItemId(String actual, String expected) {
