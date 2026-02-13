@@ -154,9 +154,9 @@ public final class EcoCoins extends JavaPlugin {
     }
 
     private static boolean isCoinUseInteraction(InteractionType type) {
-        // Este servidor procesa monedas físicas únicamente mediante Secondary,
-        // porque los items registrados en el mod.zip usan ese trigger.
-        return type == InteractionType.Secondary;
+        // EcoCoins procesa el "uso" de la moneda solo cuando el item dispara
+        // la interacción Use desde el asset pack (Interactions -> Use).
+        return type == InteractionType.Use;
     }
 
     private static String resolveItemId(ItemStack stack) {
