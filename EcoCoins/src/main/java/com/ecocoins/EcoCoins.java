@@ -154,12 +154,9 @@ public final class EcoCoins extends JavaPlugin {
     }
 
     private static boolean isCoinUseInteraction(InteractionType type) {
-        return type == InteractionType.Primary
-                || type == InteractionType.Secondary
-                || type == InteractionType.Use
-                || type == InteractionType.Ability1
-                || type == InteractionType.Ability2
-                || type == InteractionType.Ability3;
+        // Este servidor procesa monedas físicas únicamente mediante Secondary,
+        // porque los items registrados en el mod.zip usan ese trigger.
+        return type == InteractionType.Secondary;
     }
 
     private static String resolveItemId(ItemStack stack) {
