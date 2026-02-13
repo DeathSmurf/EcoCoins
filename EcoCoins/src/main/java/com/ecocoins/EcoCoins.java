@@ -124,7 +124,10 @@ public final class EcoCoins extends JavaPlugin {
                 }
 
                 CoinDefinition coin = coinOpt.get();
-                if (coin.pay <= 0) return;
+                if (coin.pay <= 0) {
+                    player.sendMessage(Message.raw("[EcoCoins] Coin inválida: pay debe ser > 0 en JSON."));
+                    return;
+                }
 
                 UUID uuid = player.getPlayerRef().getUuid();
 
