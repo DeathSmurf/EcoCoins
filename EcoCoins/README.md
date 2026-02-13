@@ -1,24 +1,25 @@
-# EcoCoins — integración con items definidos en otro mod.zip
+# EcoCoins — integración con ítems de otro mod.zip
 
-Sí: si quieres que este `mod.jar` ejecute la lógica al **usar la moneda en la mano**, tu item en el otro `mod.zip` debe disparar la interacción **`Use`**.
+Para que EcoCoins convierta una moneda física a dinero virtual, el ítem debe cumplir estas reglas:
 
-## Qué necesita EcoCoins para funcionar con tus monedas (`Coin_Copper`, `Coin_Bronze`, etc.)
+1. Estar registrado en tu `mod.zip`.
+2. Tener interacción `Secondary` activa.
+3. Tener un `itemId` que coincida con `name_item` en `EcoCoins/Coins/*.json`.
 
-1. El item debe existir en tu segundo `mod.zip`.
-2. El `itemId` de ese item debe coincidir con `name_item` en `EcoCoins/Coins/*.json`.
-3. En `Interactions`, debes tener la key **`Use`** configurada para que el evento llegue al plugin.
+## Trigger requerido
 
-## `Interactions -> Use`: qué elegir
+EcoCoins procesa monedas físicas únicamente con:
 
-- **Reference Existing**: recomendado en la mayoría de casos.
-  - Reutilizas un comportamiento existente y aseguras que el input `Use` se dispare.
-- **Create Embedded**: solo si necesitas comportamiento custom del asset.
-  - Sirve, pero no es obligatorio para EcoCoins.
+- `InteractionType.Secondary`
 
-> Lo importante para este plugin es que se dispare `InteractionType.Use` y que el `itemId` coincida.
+## Referencia de `name_item`
 
-## Checklist rápido
+Usa el ID real exacto del ítem registrado por tu asset pack.
 
-- [ ] `name_item` coincide con el item real registrado en tu otro mod.
-- [ ] El item tiene `Interactions -> Use` activo.
-- [ ] `pay > 0` y `money_name.primary` definido en cada moneda.
+- Si el ítem es `Coin_Copper` → `"name_item": "Coin_Copper"`
+- Si el ítem es `mycoins:Coin_Copper` → `"name_item": "mycoins:Coin_Copper"`
+
+## Verificación rápida en consola
+
+Al iniciar el plugin deberías ver `interactionTrigger=Secondary` en los logs de arranque.
+Si no aparece, probablemente estás ejecutando un `.jar` viejo.

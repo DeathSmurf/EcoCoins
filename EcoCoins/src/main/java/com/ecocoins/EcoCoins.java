@@ -22,6 +22,8 @@ import java.util.logging.Level;
 
 public final class EcoCoins extends JavaPlugin {
 
+    private static final InteractionType COIN_INTERACTION_TRIGGER = InteractionType.Secondary;
+
     private ConfigBootstrap bootstrap;
     private LanguageManager languageManager;
     private CoinManager coinManager;
@@ -71,6 +73,7 @@ public final class EcoCoins extends JavaPlugin {
                     "[EcoCoins] setup OK. coins=" + coinManager.countCoins()
                             + " langs=" + languageManager.countLanguages()
                             + " theEconomy=" + economy.isAvailable()
+                            + " interactionTrigger=" + COIN_INTERACTION_TRIGGER
                             + " (/change registrado)"
             );
 
@@ -86,7 +89,7 @@ public final class EcoCoins extends JavaPlugin {
     @Override
     protected void start() {
         // Si el server no llama start() por alguna razón, /change igual existe (lo registramos en setup()).
-        getLogger().at(Level.INFO).log("[EcoCoins] start()...");
+        getLogger().at(Level.INFO).log("[EcoCoins] start()... interactionTrigger=" + COIN_INTERACTION_TRIGGER);
 
         try {
             // =========================
@@ -94,7 +97,7 @@ public final class EcoCoins extends JavaPlugin {
             // =========================
             getEventRegistry().registerGlobal(PlayerInteractEvent.class, event -> {
                 InteractionType t = event.getActionType();
-                if (!isCoinUseInteraction(t)) return;
+                if (!isCoinRedeemInteraction(t)) return;
 
                 ItemStack hand = event.getItemInHand();
                 if (hand == null || hand.isEmpty()) return;
@@ -153,10 +156,10 @@ public final class EcoCoins extends JavaPlugin {
         getLogger().at(Level.INFO).log("[EcoCoins] shutdown()");
     }
 
-    private static boolean isCoinUseInteraction(InteractionType type) {
-        // EcoCoins procesa el "uso" de la moneda solo cuando el item dispara
-        // la interacción Use desde el asset pack (Interactions -> Use).
-        return type == InteractionType.Use;
+    private static boolean isCoinRedeemInteraction(InteractionType type) {
+        // Este servidor procesa monedas físicas únicamente mediante Secondary,
+        // porque los items registrados en el mod.zip usan ese trigger.
+        return type == COIN_INTERACTION_TRIGGER;
     }
 
     private static String resolveItemId(ItemStack stack) {
