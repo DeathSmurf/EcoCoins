@@ -15,6 +15,7 @@ public final class TheEconomyService {
     private boolean available = false;
     private Object apiInstance;
     private Method addBalance;
+    private Method addBalanceByName;
     private Method getBalance;
     private Method hasBalance;
     private Method removeBalance;
@@ -50,11 +51,32 @@ public final class TheEconomyService {
         }
     }
 
+
     public boolean add(UUID playerId, double amount) {
+        return add(playerId, null, amount);
+    }
+
+    public boolean add(UUID playerId, String username, double amount) {
         if (!available) return false;
         try {
+            double before = getBalance(playerId);
             addBalance.invoke(apiInstance, playerId, amount);
-            return true;
+            double after = getBalance(playerId);
+
+            if ((after - before) >= (amount - 0.000001d)) {
+                return true;
+            }
+
+            if (username != null && !username.isBlank() && addBalanceByName != null) {
+                Object r = addBalanceByName.invoke(apiInstance, username, amount);
+                boolean okByName = !(r instanceof Boolean b) || b;
+                if (!okByName) return false;
+
+                double afterByName = getBalance(playerId);
+                return (afterByName - before) >= (amount - 0.000001d);
+            }
+
+            return false;
         } catch (Exception e) {
             logger.at(java.util.logging.Level.WARNING).log("[EcoCoins] TheEconomy addBalance error: " + e.getMessage());
             return false;
@@ -82,6 +104,7 @@ public final class TheEconomyService {
             getBalance = apiClass.getMethod("getBalance", UUID.class);
             hasBalance = apiClass.getMethod("hasBalance", UUID.class, double.class);
             addBalance = apiClass.getMethod("addBalance", UUID.class, double.class);
+            addBalanceByName = apiClass.getMethod("addBalance", String.class, double.class);
             removeBalance = apiClass.getMethod("removeBalance", UUID.class, double.class);
 
             available = apiInstance != null;
