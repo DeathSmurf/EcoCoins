@@ -15,12 +15,17 @@ import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 
 import javax.annotation.Nonnull;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.logging.Level;
 
 public final class EcoCoins extends JavaPlugin {
+
+    private static final InteractionType COIN_INTERACTION_TRIGGER = InteractionType.Secondary;
+    private static final String COIN_CUSTOM_INTERACTION_ID = "EcoCoins_CoinRedeem";
 
     private ConfigBootstrap bootstrap;
     private LanguageManager languageManager;
@@ -49,6 +54,8 @@ public final class EcoCoins extends JavaPlugin {
             // TheEconomy via reflection (no crashea si falta)
             this.economy = new TheEconomyService(getLogger());
 
+            registerCoinInteractionType();
+
             // Carga tolerante: si hay JSON roto, no bloquear el registro de /change.
             try {
                 languageManager.loadAll();
@@ -71,6 +78,7 @@ public final class EcoCoins extends JavaPlugin {
                     "[EcoCoins] setup OK. coins=" + coinManager.countCoins()
                             + " langs=" + languageManager.countLanguages()
                             + " theEconomy=" + economy.isAvailable()
+                            + " interactionTrigger=" + COIN_INTERACTION_TRIGGER
                             + " (/change registrado)"
             );
 
@@ -86,7 +94,7 @@ public final class EcoCoins extends JavaPlugin {
     @Override
     protected void start() {
         // Si el server no llama start() por alguna razón, /change igual existe (lo registramos en setup()).
-        getLogger().at(Level.INFO).log("[EcoCoins] start()...");
+        getLogger().at(Level.INFO).log("[EcoCoins] start()... interactionTrigger=" + COIN_INTERACTION_TRIGGER);
 
         try {
             // =========================
@@ -94,7 +102,7 @@ public final class EcoCoins extends JavaPlugin {
             // =========================
             getEventRegistry().registerGlobal(PlayerInteractEvent.class, event -> {
                 InteractionType t = event.getActionType();
-                if (!isCoinUseInteraction(t)) return;
+                if (!isCoinRedeemInteraction(t)) return;
 
                 ItemStack hand = event.getItemInHand();
                 if (hand == null || hand.isEmpty()) return;
@@ -153,13 +161,57 @@ public final class EcoCoins extends JavaPlugin {
         getLogger().at(Level.INFO).log("[EcoCoins] shutdown()");
     }
 
-    private static boolean isCoinUseInteraction(InteractionType type) {
-        return type == InteractionType.Primary
-                || type == InteractionType.Secondary
-                || type == InteractionType.Use
-                || type == InteractionType.Ability1
-                || type == InteractionType.Ability2
-                || type == InteractionType.Ability3;
+    private static boolean isCoinRedeemInteraction(InteractionType type) {
+        // Este servidor procesa monedas físicas únicamente mediante Secondary,
+        // porque los items registrados en el mod.zip usan ese trigger.
+        // Cualquier otro tipo (Use, Primary, Ability, etc.) se ignora.
+        return type == COIN_INTERACTION_TRIGGER;
+    }
+
+    private void registerCoinInteractionType() {
+        try {
+            Class<?> interactionClass = Class.forName("com.hypixel.hytale.server.core.modules.interaction.interaction.config.Interaction");
+            Field interactionCodecField = interactionClass.getField("CODEC");
+            Object interactionCodec = interactionCodecField.get(null);
+
+            Method getCodecRegistryMethod = null;
+            for (Method m : this.getClass().getMethods()) {
+                if (m.getName().equals("getCodecRegistry") && m.getParameterCount() == 1) {
+                    getCodecRegistryMethod = m;
+                    break;
+                }
+            }
+
+            if (getCodecRegistryMethod == null) {
+                getLogger().at(Level.WARNING).log("[EcoCoins] No pude ubicar getCodecRegistry para registrar interaction type.");
+                return;
+            }
+
+            Object codecRegistry = getCodecRegistryMethod.invoke(this, interactionCodec);
+
+            Class<?> simpleInteractionClass = Class.forName("com.hypixel.hytale.server.core.modules.interaction.interaction.config.server.SimpleInteraction");
+            Field simpleCodecField = simpleInteractionClass.getField("CODEC");
+            Object simpleCodec = simpleCodecField.get(null);
+
+            Method registerMethod = null;
+            for (Method m : codecRegistry.getClass().getMethods()) {
+                if (m.getName().equals("register") && m.getParameterCount() == 3) {
+                    registerMethod = m;
+                    break;
+                }
+            }
+
+            if (registerMethod == null) {
+                getLogger().at(Level.WARNING).log("[EcoCoins] No pude ubicar register(name,class,codec) para interaction type.");
+                return;
+            }
+
+            registerMethod.invoke(codecRegistry, COIN_CUSTOM_INTERACTION_ID, simpleInteractionClass, simpleCodec);
+            getLogger().at(Level.INFO).log("[EcoCoins] interaction type registrado: " + COIN_CUSTOM_INTERACTION_ID + " -> SimpleInteraction");
+        } catch (Throwable t) {
+            getLogger().at(Level.WARNING).log("[EcoCoins] No se pudo registrar interaction type custom. Continuo con trigger="
+                    + COIN_INTERACTION_TRIGGER + ". Detalle: " + t.getClass().getSimpleName() + ": " + t.getMessage());
+        }
     }
 
     private static String resolveItemId(ItemStack stack) {
