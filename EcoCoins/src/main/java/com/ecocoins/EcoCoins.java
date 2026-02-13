@@ -94,12 +94,13 @@ public final class EcoCoins extends JavaPlugin {
             // =========================
             getEventRegistry().registerGlobal(PlayerInteractEvent.class, event -> {
                 InteractionType t = event.getActionType();
-                if (t != InteractionType.Secondary && t != InteractionType.Use) return;
+                if (!isCoinUseInteraction(t)) return;
 
                 ItemStack hand = event.getItemInHand();
                 if (hand == null || hand.isEmpty()) return;
 
-                String itemId = hand.getItemId();
+                String itemId = resolveItemId(hand);
+                if (itemId == null || itemId.isBlank()) return;
                 Optional<CoinDefinition> coinOpt = coinManager.findByItemId(itemId);
                 if (coinOpt.isEmpty()) return; // no es una moneda EcoCoins
 
@@ -150,5 +151,27 @@ public final class EcoCoins extends JavaPlugin {
     @Override
     protected void shutdown() {
         getLogger().at(Level.INFO).log("[EcoCoins] shutdown()");
+    }
+
+    private static boolean isCoinUseInteraction(InteractionType type) {
+        return type == InteractionType.Primary
+                || type == InteractionType.Secondary
+                || type == InteractionType.Use
+                || type == InteractionType.Ability1
+                || type == InteractionType.Ability2
+                || type == InteractionType.Ability3;
+    }
+
+    private static String resolveItemId(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return null;
+
+        String direct = stack.getItemId();
+        if (direct != null && !direct.isBlank()) return direct;
+
+        if (stack.getItem() != null && stack.getItem().getId() != null && !stack.getItem().getId().isBlank()) {
+            return stack.getItem().getId();
+        }
+
+        return null;
     }
 }

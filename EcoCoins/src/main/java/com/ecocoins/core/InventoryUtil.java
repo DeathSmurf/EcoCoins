@@ -4,6 +4,8 @@ import com.hypixel.hytale.server.core.inventory.Inventory;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public final class InventoryUtil {
@@ -15,7 +17,7 @@ public final class InventoryUtil {
         AtomicInteger total = new AtomicInteger(0);
         all.forEach((slot, stack) -> {
             if (stack == null || stack.isEmpty()) return;
-            if (itemId.equals(stack.getItemId())) total.addAndGet(stack.getQuantity());
+            if (matchesItemId(stack.getItemId(), itemId)) total.addAndGet(stack.getQuantity());
         });
         return total.get();
     }
@@ -26,11 +28,39 @@ public final class InventoryUtil {
     public static boolean removeItemId(Inventory inv, String itemId, int amount) {
         if (amount <= 0) return true;
         ItemContainer all = inv.getCombinedEverything();
+
+        // Camino rápido con el id exacto
         ItemStack need = new ItemStack(itemId, amount);
-        // removeItemStack intenta remover del contenedor; si no puede, la transacción quedará parcial.
-        // Usamos canRemoveItemStack primero.
-        if (!all.canRemoveItemStack(need)) return false;
-        all.removeItemStack(need);
+        if (all.canRemoveItemStack(need)) {
+            all.removeItemStack(need);
+            return true;
+        }
+
+        // Fallback: remover por id normalizado (con/sin namespace)
+        int available = countItemId(inv, itemId);
+        if (available < amount) return false;
+
+        Map<String, Integer> removeByExactId = new LinkedHashMap<>();
+        AtomicInteger remaining = new AtomicInteger(amount);
+        all.forEach((slot, stack) -> {
+            if (remaining.get() <= 0 || stack == null || stack.isEmpty()) return;
+            String stackId = stack.getItemId();
+            if (!matchesItemId(stackId, itemId)) return;
+
+            int take = Math.min(stack.getQuantity(), remaining.get());
+            if (take <= 0) return;
+
+            removeByExactId.merge(stackId, take, Integer::sum);
+            remaining.addAndGet(-take);
+        });
+
+        if (remaining.get() > 0) return false;
+
+        for (Map.Entry<String, Integer> entry : removeByExactId.entrySet()) {
+            ItemStack chunk = new ItemStack(entry.getKey(), entry.getValue());
+            if (!all.canRemoveItemStack(chunk)) return false;
+            all.removeItemStack(chunk);
+        }
         return true;
     }
 
@@ -49,5 +79,21 @@ public final class InventoryUtil {
         if (amount <= 0) return true;
         ItemContainer all = inv.getCombinedEverything();
         return all.canAddItemStack(new ItemStack(itemId, amount));
+    }
+
+    private static boolean matchesItemId(String actual, String expected) {
+        if (actual == null || expected == null) return false;
+        String a = actual.trim();
+        String e = expected.trim();
+        if (a.equals(e)) return true;
+        return normalizeItemId(a).equals(normalizeItemId(e));
+    }
+
+    private static String normalizeItemId(String itemId) {
+        int namespaceSeparator = itemId.indexOf(':');
+        if (namespaceSeparator >= 0 && namespaceSeparator + 1 < itemId.length()) {
+            return itemId.substring(namespaceSeparator + 1).trim();
+        }
+        return itemId;
     }
 }
