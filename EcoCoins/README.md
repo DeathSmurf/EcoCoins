@@ -12,6 +12,18 @@ EcoCoins procesa monedas físicas únicamente con:
 
 - `InteractionType.Secondary`
 
+## Tipos que EcoCoins ignora
+
+Aunque el engine emita otros tipos (`Use`, `Primary`, `Ability1`, etc.), este plugin no los procesa para redimir monedas.
+
+## Type recomendado para `Secondary` en tu item
+
+EcoCoins intenta registrar el type custom `EcoCoins_CoinRedeem` (alias de interacción simple).
+
+- En `BlockType > Interactions > Secondary > Interactions > 0 > Type` puedes usar:
+  - `EcoCoins_CoinRedeem` (recomendado), o
+  - `Simple` si no quieres depender del alias.
+
 ## Referencia de `name_item`
 
 Usa el ID real exacto del ítem registrado por tu asset pack.
