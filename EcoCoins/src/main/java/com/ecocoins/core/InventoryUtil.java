@@ -4,8 +4,8 @@ import com.hypixel.hytale.server.core.inventory.Inventory;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public final class InventoryUtil {
@@ -29,27 +29,38 @@ public final class InventoryUtil {
         if (amount <= 0) return true;
         ItemContainer all = inv.getCombinedEverything();
 
-        AtomicInteger remaining = new AtomicInteger(amount);
-        List<SlotRemoval> removals = new ArrayList<>();
+        // Camino rápido con el id exacto
+        ItemStack need = new ItemStack(itemId, amount);
+        if (all.canRemoveItemStack(need)) {
+            all.removeItemStack(need);
+            return true;
+        }
 
+        // Fallback: remover por id normalizado (con/sin namespace)
+        int available = countItemId(inv, itemId);
+        if (available < amount) return false;
+
+        Map<String, Integer> removeByExactId = new LinkedHashMap<>();
+        AtomicInteger remaining = new AtomicInteger(amount);
         all.forEach((slot, stack) -> {
             if (remaining.get() <= 0 || stack == null || stack.isEmpty()) return;
-            if (!matchesItemId(stack.getItemId(), itemId)) return;
+            String stackId = stack.getItemId();
+            if (!matchesItemId(stackId, itemId)) return;
 
             int take = Math.min(stack.getQuantity(), remaining.get());
             if (take <= 0) return;
 
-            removals.add(new SlotRemoval(slot, take));
+            removeByExactId.merge(stackId, take, Integer::sum);
             remaining.addAndGet(-take);
         });
 
         if (remaining.get() > 0) return false;
 
-        for (SlotRemoval removal : removals) {
-            var tx = all.removeItemStackFromSlot(removal.slot, removal.amount);
-            if (tx == null || !tx.succeeded()) return false;
+        for (Map.Entry<String, Integer> entry : removeByExactId.entrySet()) {
+            ItemStack chunk = new ItemStack(entry.getKey(), entry.getValue());
+            if (!all.canRemoveItemStack(chunk)) return false;
+            all.removeItemStack(chunk);
         }
-
         return true;
     }
 
@@ -68,16 +79,6 @@ public final class InventoryUtil {
         if (amount <= 0) return true;
         ItemContainer all = inv.getCombinedEverything();
         return all.canAddItemStack(new ItemStack(itemId, amount));
-    }
-
-    private static final class SlotRemoval {
-        private final short slot;
-        private final int amount;
-
-        private SlotRemoval(short slot, int amount) {
-            this.slot = slot;
-            this.amount = amount;
-        }
     }
 
     private static boolean matchesItemId(String actual, String expected) {
