@@ -18,7 +18,7 @@ Aunque el engine emita otros tipos (`Use`, `Primary`, `Ability1`, etc.), este pl
 
 ## Type recomendado para `Secondary` en tu item
 
-EcoCoins intenta registrar el type custom `EcoCoins_CoinRedeem` (alias de interacción simple).
+EcoCoins registra el type custom `EcoCoins_CoinRedeem` (alias de `SimpleInteraction`) en `setup()` usando `getCodecRegistry(Interaction.CODEC).register(...)`.
 
 - En `BlockType > Interactions > Secondary > Interactions > 0 > Type` puedes usar:
   - `EcoCoins_CoinRedeem` (recomendado), o
@@ -35,3 +35,5 @@ Usa el ID real exacto del ítem registrado por tu asset pack.
 
 Al iniciar el plugin deberías ver `interactionTrigger=Secondary` en los logs de arranque.
 Si no aparece, probablemente estás ejecutando un `.jar` viejo.
+
+Si en startup no ves el log `interaction type registrado: EcoCoins_CoinRedeem`, usa `Simple` en el `Type` del item y revisa warnings de EcoCoins para saber por qué el alias no se registró.
