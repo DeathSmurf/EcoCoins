@@ -63,6 +63,7 @@ public final class TheEconomyService {
         // tratamos el depósito como exitoso para evitar falsos negativos por lectura
         // de balance desfasada en el mismo tick.
         try {
+            double before = getBalance(playerId);
             addBalance.invoke(apiInstance, playerId, amount);
             return true;
         } catch (Exception uuidError) {
