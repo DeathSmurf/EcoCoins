@@ -15,6 +15,7 @@ public final class TheEconomyService {
     private boolean available = false;
     private Object apiInstance;
     private Method addBalance;
+    private Method addBalanceByName;
     private Method getBalance;
     private Method hasBalance;
     private Method removeBalance;
@@ -50,13 +51,34 @@ public final class TheEconomyService {
         }
     }
 
+
     public boolean add(UUID playerId, double amount) {
+        return add(playerId, null, amount);
+    }
+
+    public boolean add(UUID playerId, String username, double amount) {
         if (!available) return false;
+
+        // addBalance(UUID, amount) en TheEconomy es void: si no lanza excepción,
+        // tratamos el depósito como exitoso para evitar falsos negativos por lectura
+        // de balance desfasada en el mismo tick.
         try {
             addBalance.invoke(apiInstance, playerId, amount);
             return true;
-        } catch (Exception e) {
-            logger.at(java.util.logging.Level.WARNING).log("[EcoCoins] TheEconomy addBalance error: " + e.getMessage());
+        } catch (Exception uuidError) {
+            // Fallback opcional por nombre de usuario (algunas instalaciones lo resuelven mejor).
+            if (username != null && !username.isBlank() && addBalanceByName != null) {
+                try {
+                    Object r = addBalanceByName.invoke(apiInstance, username, amount);
+                    return !(r instanceof Boolean b) || b;
+                } catch (Exception nameError) {
+                    logger.at(java.util.logging.Level.WARNING).log("[EcoCoins] TheEconomy addBalance error UUID="
+                            + uuidError.getMessage() + " | username=" + nameError.getMessage());
+                    return false;
+                }
+            }
+
+            logger.at(java.util.logging.Level.WARNING).log("[EcoCoins] TheEconomy addBalance error: " + uuidError.getMessage());
             return false;
         }
     }
@@ -82,6 +104,7 @@ public final class TheEconomyService {
             getBalance = apiClass.getMethod("getBalance", UUID.class);
             hasBalance = apiClass.getMethod("hasBalance", UUID.class, double.class);
             addBalance = apiClass.getMethod("addBalance", UUID.class, double.class);
+            addBalanceByName = apiClass.getMethod("addBalance", String.class, double.class);
             removeBalance = apiClass.getMethod("removeBalance", UUID.class, double.class);
 
             available = apiInstance != null;
