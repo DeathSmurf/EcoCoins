@@ -58,27 +58,28 @@ public final class TheEconomyService {
 
     public boolean add(UUID playerId, String username, double amount) {
         if (!available) return false;
+
+        // addBalance(UUID, amount) en TheEconomy es void: si no lanza excepción,
+        // tratamos el depósito como exitoso para evitar falsos negativos por lectura
+        // de balance desfasada en el mismo tick.
         try {
             double before = getBalance(playerId);
             addBalance.invoke(apiInstance, playerId, amount);
-            double after = getBalance(playerId);
-
-            if ((after - before) >= (amount - 0.000001d)) {
-                return true;
-            }
-
+            return true;
+        } catch (Exception uuidError) {
+            // Fallback opcional por nombre de usuario (algunas instalaciones lo resuelven mejor).
             if (username != null && !username.isBlank() && addBalanceByName != null) {
-                Object r = addBalanceByName.invoke(apiInstance, username, amount);
-                boolean okByName = !(r instanceof Boolean b) || b;
-                if (!okByName) return false;
-
-                double afterByName = getBalance(playerId);
-                return (afterByName - before) >= (amount - 0.000001d);
+                try {
+                    Object r = addBalanceByName.invoke(apiInstance, username, amount);
+                    return !(r instanceof Boolean b) || b;
+                } catch (Exception nameError) {
+                    logger.at(java.util.logging.Level.WARNING).log("[EcoCoins] TheEconomy addBalance error UUID="
+                            + uuidError.getMessage() + " | username=" + nameError.getMessage());
+                    return false;
+                }
             }
 
-            return false;
-        } catch (Exception e) {
-            logger.at(java.util.logging.Level.WARNING).log("[EcoCoins] TheEconomy addBalance error: " + e.getMessage());
+            logger.at(java.util.logging.Level.WARNING).log("[EcoCoins] TheEconomy addBalance error: " + uuidError.getMessage());
             return false;
         }
     }
