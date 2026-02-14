@@ -8,9 +8,10 @@ Para que EcoCoins convierta una moneda física a dinero virtual, el ítem debe c
 
 ## Trigger requerido
 
-EcoCoins procesa monedas físicas únicamente con:
+EcoCoins procesa monedas físicas con:
 
-- `InteractionType.Secondary`
+- `InteractionType.Secondary` (principal)
+- `InteractionType.Use` (compatibilidad para ciertos assets `Secondary + Simple`)
 
 ## Tipos que EcoCoins ignora
 
@@ -33,7 +34,7 @@ Usa el ID real exacto del ítem registrado por tu asset pack.
 
 ## Verificación rápida en consola
 
-Al iniciar el plugin deberías ver `interactionTrigger=Secondary` en los logs de arranque.
+Al iniciar el plugin deberías ver `interactionTriggerPrimary=Secondary` y `interactionTriggerCompat=Use` en los logs de arranque.
 Si no aparece, probablemente estás ejecutando un `.jar` viejo.
 
 Si en startup no ves el log `interaction type registrado: EcoCoins_CoinRedeem`, usa `Simple` en el `Type` del item y revisa warnings de EcoCoins para saber por qué el alias no se registró.

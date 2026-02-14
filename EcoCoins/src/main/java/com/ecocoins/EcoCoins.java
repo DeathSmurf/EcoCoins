@@ -26,7 +26,8 @@ import java.util.logging.Level;
 
 public final class EcoCoins extends JavaPlugin {
 
-    private static final InteractionType COIN_INTERACTION_TRIGGER = InteractionType.Secondary;
+    private static final InteractionType PRIMARY_COIN_INTERACTION_TRIGGER = InteractionType.Secondary;
+    private static final InteractionType COMPAT_COIN_INTERACTION_TRIGGER = InteractionType.Use;
     private static final String COIN_CUSTOM_INTERACTION_ID = "EcoCoins_CoinRedeem";
 
     private ConfigBootstrap bootstrap;
@@ -80,7 +81,8 @@ public final class EcoCoins extends JavaPlugin {
                     "[EcoCoins] setup OK. coins=" + coinManager.countCoins()
                             + " langs=" + languageManager.countLanguages()
                             + " theEconomy=" + economy.isAvailable()
-                            + " interactionTrigger=" + COIN_INTERACTION_TRIGGER
+                            + " interactionTriggerPrimary=" + PRIMARY_COIN_INTERACTION_TRIGGER
+                            + " interactionTriggerCompat=" + COMPAT_COIN_INTERACTION_TRIGGER
                             + " (/change registrado)"
             );
 
@@ -96,7 +98,8 @@ public final class EcoCoins extends JavaPlugin {
     @Override
     protected void start() {
         // Si el server no llama start() por alguna razón, /change igual existe (lo registramos en setup()).
-        getLogger().at(Level.INFO).log("[EcoCoins] start()... interactionTrigger=" + COIN_INTERACTION_TRIGGER);
+        getLogger().at(Level.INFO).log("[EcoCoins] start()... interactionTriggerPrimary=" + PRIMARY_COIN_INTERACTION_TRIGGER
+                + " interactionTriggerCompat=" + COMPAT_COIN_INTERACTION_TRIGGER);
 
         try {
             // =========================
@@ -168,10 +171,10 @@ public final class EcoCoins extends JavaPlugin {
     }
 
     private static boolean isCoinRedeemInteraction(InteractionType type) {
-        // Este servidor procesa monedas físicas únicamente mediante Secondary,
-        // porque los items registrados en el mod.zip usan ese trigger.
-        // Cualquier otro tipo (Use, Primary, Ability, etc.) se ignora.
-        return type == COIN_INTERACTION_TRIGGER;
+        // Trigger principal esperado: Secondary.
+        // Compatibilidad: en algunos setups de assets (Secondary + Type Simple),
+        // el engine puede reportar Use en PlayerInteractEvent.
+        return type == PRIMARY_COIN_INTERACTION_TRIGGER || type == COMPAT_COIN_INTERACTION_TRIGGER;
     }
 
     private void registerCoinInteractionType() {
@@ -185,7 +188,8 @@ public final class EcoCoins extends JavaPlugin {
                     + " -> " + SimpleInteraction.class.getSimpleName());
         } catch (Throwable t) {
             getLogger().at(Level.WARNING).log("[EcoCoins] No se pudo registrar interaction type custom "
-                    + COIN_CUSTOM_INTERACTION_ID + ". Continuo con trigger=" + COIN_INTERACTION_TRIGGER
+                    + COIN_CUSTOM_INTERACTION_ID + ". Continuo con triggers=" + PRIMARY_COIN_INTERACTION_TRIGGER
+                    + "/" + COMPAT_COIN_INTERACTION_TRIGGER
                     + ". Detalle: " + t.getClass().getName() + ": " + t.getMessage());
         }
     }
