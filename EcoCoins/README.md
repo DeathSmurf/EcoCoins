@@ -44,3 +44,12 @@ Al iniciar el plugin deberías ver `interactionTrigger=Secondary` en los logs de
 Si no aparece, probablemente estás ejecutando un `.jar` viejo.
 
 Si en startup no ves el log `interaction type registrado: EcoCoins_CoinRedeem`, usa `Simple` en el `Type` del item y revisa warnings de EcoCoins para saber por qué el alias no se registró.
+
+## Diagnóstico de canje (logs)
+
+Si no deposita balance al usar la moneda, revisa logs con prefijo `"[EcoCoins][Redeem]"`:
+
+- `ignorado: itemId no mapeado ...` → `name_item` no coincide con el item real.
+- `fallo: no se pudo remover x1 ...` → no pudo consumir la moneda del inventario.
+- `fallo: depósito virtual falló ...` → TheEconomy rechazó el depósito.
+- `ok: canjeado ...` → el canje terminó correctamente.
