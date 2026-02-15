@@ -127,6 +127,23 @@ public final class EcoCoins extends JavaPlugin {
         getLogger().at(Level.INFO).log("[EcoCoins] shutdown()");
     }
 
+
+    private void registerCoinInteractionType() {
+        try {
+            getCodecRegistry(Interaction.CODEC).register(
+                    COIN_CUSTOM_INTERACTION_ID,
+                    SimpleInteraction.class,
+                    SimpleInteraction.CODEC
+            );
+            getLogger().at(Level.INFO).log("[EcoCoins] interaction type registrado: " + COIN_CUSTOM_INTERACTION_ID
+                    + " -> " + SimpleInteraction.class.getSimpleName());
+        } catch (Throwable t) {
+            getLogger().at(Level.WARNING).log("[EcoCoins] No se pudo registrar interaction type custom "
+                    + COIN_CUSTOM_INTERACTION_ID + ". Continuo con trigger=" + COIN_INTERACTION_TRIGGER
+                    + ". Detalle: " + t.getClass().getName() + ": " + t.getMessage());
+        }
+    }
+
     private static boolean isCoinRedeemInteraction(InteractionType type) {
         // Modo ideal y estricto: solo Secondary.
         return type == COIN_INTERACTION_TRIGGER;
