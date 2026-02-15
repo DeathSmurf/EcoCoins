@@ -1,0 +1,50 @@
+$C = "../../Common.ui";
+
+$C.@PageOverlay {}
+
+$C.@Container {
+    Anchor: (Width: 450, Height: 230);
+
+    #Title {
+        $C.@Title {
+           @Text = %server.customUI.booksAndPapers.signTitle;
+        }
+    }
+
+    #Content {
+        LayoutMode: Top;
+
+        $C.@TextField #TitleField {
+            @Anchor = (Left: 0, Top: 12);
+
+            PlaceholderText: %server.customUI.booksAndPapers.title;
+        }
+
+        $C.@TextField #Author {
+            @Anchor = (Left: 0, Top: 12);
+
+            PlaceholderText: %server.customUI.booksAndPapers.author;
+        }
+
+        Group {
+            LayoutMode: Left;
+            Anchor: (Top: 15);
+
+            $C.@SecondaryTextButton #Cancel {
+                Text: %server.customUI.booksAndPapers.cancel;
+                FlexWeight: 1;
+            }
+
+            Group {
+                Anchor: (Width: 5);
+            }
+
+            $C.@TextButton #Sign {
+                Text: %server.customUI.booksAndPapers.sign;
+                FlexWeight: 1;
+            }
+        }
+    }
+}
+
+$C.@BackButton {}
