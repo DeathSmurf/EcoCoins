@@ -7,7 +7,10 @@ import com.ecocoins.core.CoinRedeemService;
 import com.ecocoins.core.LanguageManager;
 import com.ecocoins.core.TheEconomyService;
 import com.hypixel.hytale.protocol.InteractionType;
+import com.hypixel.hytale.protocol.MouseButtonState;
+import com.hypixel.hytale.protocol.MouseButtonType;
 import com.hypixel.hytale.server.core.event.events.player.PlayerInteractEvent;
+import com.hypixel.hytale.server.core.event.events.player.PlayerMouseButtonEvent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.modules.interaction.interaction.config.Interaction;
 import com.hypixel.hytale.server.core.modules.interaction.interaction.config.SimpleInteraction;
@@ -111,6 +114,22 @@ public final class EcoCoins extends JavaPlugin {
                 }
             });
 
+            // Fallback: algunos items custom no disparan PlayerInteractEvent al click derecho.
+            // En ese caso usamos el evento de mouse right-pressed para intentar el canje.
+            getEventRegistry().registerGlobal(PlayerMouseButtonEvent.class, event -> {
+                if (event.getMouseButton() == null) return;
+                if (event.getMouseButton().mouseButtonType != MouseButtonType.Right) return;
+                if (event.getMouseButton().state != MouseButtonState.Pressed) return;
+
+                var player = event.getPlayer();
+                var item = event.getItemInHand();
+                String itemId = (item != null) ? item.getId() : null;
+                boolean processed = coinRedeemService.redeemByMouseRightIfEcoCoin(player, itemId);
+                if (processed) {
+                    event.setCancelled(true);
+                }
+            });
+
             getLogger().at(Level.INFO).log("[EcoCoins] start() OK.");
 
         } catch (Throwable t) {
@@ -146,6 +165,6 @@ public final class EcoCoins extends JavaPlugin {
 
     private static boolean isCoinRedeemInteraction(InteractionType type) {
         // Modo ideal y estricto: solo Secondary.
-        return type == COIN_INTERACTION_TRIGGER;
+        return type == COIN_INTERACTION_TRIGGER || type == InteractionType.Use;
     }
 }

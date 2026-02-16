@@ -3,8 +3,8 @@ package com.ecocoins.core;
 import com.ecocoins.model.CoinDefinition;
 import com.hypixel.hytale.protocol.InteractionType;
 import com.hypixel.hytale.server.core.Message;
-import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.logger.HytaleLogger;
 
 import java.util.Optional;
@@ -30,21 +30,31 @@ public final class CoinRedeemService {
      * y se intentó procesar (éxito o fallo).
      */
     public boolean redeemFromHandIfEcoCoin(Player player, InteractionType actionType, ItemStack itemInHand) {
-        if (actionType != InteractionType.Secondary) return false;
+        if (!isRedeemTrigger(actionType)) return false;
         if (player == null || itemInHand == null || itemInHand.isEmpty()) {
             debug("ignorado: mano vacía para trigger=" + actionType);
             return false;
         }
 
         String itemId = resolveItemId(itemInHand);
+        return redeemByItemId(player, itemId, "PlayerInteractEvent:" + actionType);
+    }
+
+    public boolean redeemByMouseRightIfEcoCoin(Player player, String itemId) {
+        return redeemByItemId(player, itemId, "PlayerMouseButtonEvent:RightPressed");
+    }
+
+    private boolean redeemByItemId(Player player, String itemId, String source) {
+        if (player == null) return false;
+
         if (itemId == null || itemId.isBlank()) {
-            debug("ignorado: itemId vacío (getItemId/getItem().getId) para trigger=" + actionType);
+            debug("ignorado: itemId vacío (source=" + source + ")");
             return false;
         }
 
         Optional<CoinDefinition> coinOpt = coinManager.findByItemId(itemId);
         if (coinOpt.isEmpty()) {
-            debug("ignorado: itemId no mapeado en Coins JSON -> " + itemId);
+            debug("ignorado: itemId no mapeado en Coins JSON -> " + itemId + " (source=" + source + ")");
             return false;
         }
 
@@ -82,9 +92,13 @@ public final class CoinRedeemService {
             return true;
         }
 
-        debug("ok: canjeado itemId=" + itemId + " pay=" + coin.pay + " uuid=" + uuid);
+        debug("ok: canjeado itemId=" + itemId + " pay=" + coin.pay + " uuid=" + uuid + " (source=" + source + ")");
         player.sendMessage(Message.raw("[EcoCoins] +" + coin.pay));
         return true;
+    }
+
+    private static boolean isRedeemTrigger(InteractionType actionType) {
+        return actionType == InteractionType.Secondary || actionType == InteractionType.Use;
     }
 
     private void debug(String message) {
