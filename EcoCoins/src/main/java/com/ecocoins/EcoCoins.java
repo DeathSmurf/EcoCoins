@@ -6,6 +6,7 @@ import com.ecocoins.core.ConfigBootstrap;
 import com.ecocoins.core.CoinRedeemService;
 import com.ecocoins.core.LanguageManager;
 import com.ecocoins.core.TheEconomyService;
+import com.ecocoins.interactions.CoinRedeemInteraction;
 import com.hypixel.hytale.protocol.InteractionType;
 import com.hypixel.hytale.protocol.MouseButtonState;
 import com.hypixel.hytale.protocol.MouseButtonType;
@@ -13,7 +14,6 @@ import com.hypixel.hytale.server.core.event.events.player.PlayerInteractEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerMouseButtonEvent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.modules.interaction.interaction.config.Interaction;
-import com.hypixel.hytale.server.core.modules.interaction.interaction.config.SimpleInteraction;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 
@@ -23,6 +23,7 @@ import java.util.logging.Level;
 
 public final class EcoCoins extends JavaPlugin {
 
+    private static EcoCoins instance;
     private static final InteractionType COIN_INTERACTION_TRIGGER = InteractionType.Secondary;
     private static final String COIN_CUSTOM_INTERACTION_ID = "EcoCoins_CoinRedeem";
     private static final boolean REDEEM_DEBUG_LOGS = true;
@@ -37,6 +38,7 @@ public final class EcoCoins extends JavaPlugin {
 
     public EcoCoins(@Nonnull JavaPluginInit init) {
         super(init);
+        instance = this;
     }
 
     @Override
@@ -111,14 +113,9 @@ public final class EcoCoins extends JavaPlugin {
                 debugInput("PlayerInteractEvent action=" + action + " itemId=" + itemId);
                 if (!isCoinRedeemInteraction(action)) return;
 
-                ItemStack hand = event.getItemInHand();
-                var player = event.getPlayer();
-                boolean processed = coinRedeemService.redeemFromHandIfEcoCoin(player, action, hand);
-                if (processed) {
-                    event.setCancelled(true);
-                } else {
-                    debugInput("PlayerInteractEvent sin canje action=" + action + " itemId=" + itemId);
-                }
+                // Diagnóstico solamente: el canje real ahora ocurre dentro de CoinRedeemInteraction
+                // cuando el item ejecuta Type: EcoCoins_CoinRedeem.
+                debugInput("PlayerInteractEvent recibido action=" + action + " itemId=" + itemId);
             });
 
             // Fallback: algunos items custom no disparan PlayerInteractEvent al click derecho.
@@ -140,14 +137,7 @@ public final class EcoCoins extends JavaPlugin {
                 if (mouse.mouseButtonType != MouseButtonType.Right) return;
                 if (mouse.state != MouseButtonState.Pressed) return;
 
-                var player = event.getPlayer();
                 debugInput("PlayerMouseButtonEvent right pressed itemId=" + itemId);
-                boolean processed = coinRedeemService.redeemByMouseRightIfEcoCoin(player, itemId);
-                if (processed) {
-                    event.setCancelled(true);
-                } else {
-                    debugInput("PlayerMouseButtonEvent sin canje itemId=" + itemId);
-                }
             });
 
             getLogger().at(Level.INFO).log("[EcoCoins] start() OK.");
@@ -172,11 +162,11 @@ public final class EcoCoins extends JavaPlugin {
         try {
             getCodecRegistry(Interaction.CODEC).register(
                     COIN_CUSTOM_INTERACTION_ID,
-                    SimpleInteraction.class,
-                    SimpleInteraction.CODEC
+                    CoinRedeemInteraction.class,
+                    CoinRedeemInteraction.CODEC
             );
             getLogger().at(Level.INFO).log("[EcoCoins] interaction type registrado: " + COIN_CUSTOM_INTERACTION_ID
-                    + " -> " + SimpleInteraction.class.getSimpleName());
+                    + " -> " + CoinRedeemInteraction.class.getSimpleName());
         } catch (Throwable t) {
             getLogger().at(Level.WARNING).log("[EcoCoins] No se pudo registrar interaction type custom "
                     + COIN_CUSTOM_INTERACTION_ID + ". Continuo con trigger=" + COIN_INTERACTION_TRIGGER
@@ -205,6 +195,14 @@ public final class EcoCoins extends JavaPlugin {
         }
 
         return null;
+    }
+
+    public static EcoCoins getInstance() {
+        return instance;
+    }
+
+    public CoinRedeemService getCoinRedeemService() {
+        return coinRedeemService;
     }
 
     private static boolean isCoinRedeemInteraction(InteractionType type) {
