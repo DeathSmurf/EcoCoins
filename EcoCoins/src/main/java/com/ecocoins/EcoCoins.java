@@ -27,6 +27,7 @@ public final class EcoCoins extends JavaPlugin {
     private static final String COIN_CUSTOM_INTERACTION_ID = "EcoCoins_CoinRedeem";
     private static final boolean REDEEM_DEBUG_LOGS = true;
     private static final boolean INPUT_DEBUG_LOGS = true;
+    private static final boolean RAW_INPUT_DEBUG_LOGS = true;
 
     private ConfigBootstrap bootstrap;
     private LanguageManager languageManager;
@@ -103,6 +104,7 @@ public final class EcoCoins extends JavaPlugin {
             // =========================
             // LISTENER CLICK DERECHO
             // =========================
+            getLogger().at(Level.INFO).log("[EcoCoins] registrando listener PlayerInteractEvent");
             getEventRegistry().registerGlobal(PlayerInteractEvent.class, event -> {
                 InteractionType action = event.getActionType();
                 String itemId = resolveItemId(event.getItemInHand());
@@ -120,15 +122,25 @@ public final class EcoCoins extends JavaPlugin {
             });
 
             // Fallback: algunos items custom no disparan PlayerInteractEvent al click derecho.
-            // En ese caso usamos el evento de mouse right-pressed para intentar el canje.
+            // En ese caso usamos el evento de mouse para diagnosticar y canjear.
+            getLogger().at(Level.INFO).log("[EcoCoins] registrando listener PlayerMouseButtonEvent");
             getEventRegistry().registerGlobal(PlayerMouseButtonEvent.class, event -> {
-                if (event.getMouseButton() == null) return;
-                if (event.getMouseButton().mouseButtonType != MouseButtonType.Right) return;
-                if (event.getMouseButton().state != MouseButtonState.Pressed) return;
-
-                var player = event.getPlayer();
+                var mouse = event.getMouseButton();
                 var item = event.getItemInHand();
                 String itemId = (item != null) ? item.getId() : null;
+                debugRawInput("PlayerMouseButtonEvent button="
+                        + (mouse != null ? mouse.mouseButtonType : null)
+                        + " state="
+                        + (mouse != null ? mouse.state : null)
+                        + " clicks="
+                        + (mouse != null ? mouse.clicks : null)
+                        + " itemId=" + itemId);
+
+                if (mouse == null) return;
+                if (mouse.mouseButtonType != MouseButtonType.Right) return;
+                if (mouse.state != MouseButtonState.Pressed) return;
+
+                var player = event.getPlayer();
                 debugInput("PlayerMouseButtonEvent right pressed itemId=" + itemId);
                 boolean processed = coinRedeemService.redeemByMouseRightIfEcoCoin(player, itemId);
                 if (processed) {
@@ -175,6 +187,11 @@ public final class EcoCoins extends JavaPlugin {
     private void debugInput(String message) {
         if (!INPUT_DEBUG_LOGS) return;
         getLogger().at(Level.INFO).log("[EcoCoins][Input] " + message);
+    }
+
+    private void debugRawInput(String message) {
+        if (!RAW_INPUT_DEBUG_LOGS) return;
+        getLogger().at(Level.INFO).log("[EcoCoins][InputRaw] " + message);
     }
 
     private static String resolveItemId(ItemStack stack) {
