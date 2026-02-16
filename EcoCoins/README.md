@@ -53,3 +53,12 @@ Si no deposita balance al usar la moneda, revisa logs con prefijo `"[EcoCoins][R
 - `fallo: no se pudo remover x1 ...` → no pudo consumir la moneda del inventario.
 - `fallo: depósito virtual falló ...` → TheEconomy rechazó el depósito.
 - `ok: canjeado ...` → el canje terminó correctamente.
+
+
+## Referencia directa de Secondary (BooksAndPapers)
+
+Si quieres replicar el patrón de `Interaction Secondary: Type: Simple`, revisa:
+
+- `docs/reference/BooksAndPapers/src/main/resources/Server/Item/Items/Books/Books_And_Papers_Book.json`
+- guía de EcoCoins: `docs/reference/EcoCoins_SecondaryInteraction_Guide.md`
+- plantilla lista para copiar: `docs/reference/templates/Template_EcoCoins_Coin_Item.json`
