@@ -26,6 +26,7 @@ public final class EcoCoins extends JavaPlugin {
     private static final InteractionType COIN_INTERACTION_TRIGGER = InteractionType.Secondary;
     private static final String COIN_CUSTOM_INTERACTION_ID = "EcoCoins_CoinRedeem";
     private static final boolean REDEEM_DEBUG_LOGS = true;
+    private static final boolean INPUT_DEBUG_LOGS = true;
 
     private ConfigBootstrap bootstrap;
     private LanguageManager languageManager;
@@ -104,6 +105,8 @@ public final class EcoCoins extends JavaPlugin {
             // =========================
             getEventRegistry().registerGlobal(PlayerInteractEvent.class, event -> {
                 InteractionType action = event.getActionType();
+                String itemId = resolveItemId(event.getItemInHand());
+                debugInput("PlayerInteractEvent action=" + action + " itemId=" + itemId);
                 if (!isCoinRedeemInteraction(action)) return;
 
                 ItemStack hand = event.getItemInHand();
@@ -111,6 +114,8 @@ public final class EcoCoins extends JavaPlugin {
                 boolean processed = coinRedeemService.redeemFromHandIfEcoCoin(player, action, hand);
                 if (processed) {
                     event.setCancelled(true);
+                } else {
+                    debugInput("PlayerInteractEvent sin canje action=" + action + " itemId=" + itemId);
                 }
             });
 
@@ -124,9 +129,12 @@ public final class EcoCoins extends JavaPlugin {
                 var player = event.getPlayer();
                 var item = event.getItemInHand();
                 String itemId = (item != null) ? item.getId() : null;
+                debugInput("PlayerMouseButtonEvent right pressed itemId=" + itemId);
                 boolean processed = coinRedeemService.redeemByMouseRightIfEcoCoin(player, itemId);
                 if (processed) {
                     event.setCancelled(true);
+                } else {
+                    debugInput("PlayerMouseButtonEvent sin canje itemId=" + itemId);
                 }
             });
 
@@ -161,6 +169,24 @@ public final class EcoCoins extends JavaPlugin {
                     + COIN_CUSTOM_INTERACTION_ID + ". Continuo con trigger=" + COIN_INTERACTION_TRIGGER
                     + ". Detalle: " + t.getClass().getName() + ": " + t.getMessage());
         }
+    }
+
+    private void debugInput(String message) {
+        if (!INPUT_DEBUG_LOGS) return;
+        getLogger().at(Level.INFO).log("[EcoCoins][Input] " + message);
+    }
+
+    private static String resolveItemId(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return null;
+
+        String direct = stack.getItemId();
+        if (direct != null && !direct.isBlank()) return direct;
+
+        if (stack.getItem() != null && stack.getItem().getId() != null && !stack.getItem().getId().isBlank()) {
+            return stack.getItem().getId();
+        }
+
+        return null;
     }
 
     private static boolean isCoinRedeemInteraction(InteractionType type) {
