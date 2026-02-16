@@ -139,6 +139,7 @@ public final class EcoCoins extends JavaPlugin {
             });
 
             getLogger().at(Level.INFO).log("[EcoCoins] start() OK.");
+            getLogger().at(Level.INFO).log("[EcoCoins] EcoCoin:cargado correctamente");
 
         } catch (Throwable t) {
             getLogger().at(Level.SEVERE).log("[EcoCoins] CRASH en start(): " + t);
