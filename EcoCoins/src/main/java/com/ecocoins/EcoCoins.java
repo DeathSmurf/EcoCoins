@@ -3,13 +3,14 @@ package com.ecocoins;
 import com.ecocoins.commands.ChangeMoneyCommand;
 import com.ecocoins.core.CoinManager;
 import com.ecocoins.core.ConfigBootstrap;
-import com.ecocoins.core.InventoryUtil;
+import com.ecocoins.core.CoinRedeemService;
 import com.ecocoins.core.LanguageManager;
 import com.ecocoins.core.TheEconomyService;
-import com.ecocoins.model.CoinDefinition;
 import com.hypixel.hytale.protocol.InteractionType;
-import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.protocol.MouseButtonState;
+import com.hypixel.hytale.protocol.MouseButtonType;
 import com.hypixel.hytale.server.core.event.events.player.PlayerInteractEvent;
+import com.hypixel.hytale.server.core.event.events.player.PlayerMouseButtonEvent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.modules.interaction.interaction.config.Interaction;
 import com.hypixel.hytale.server.core.modules.interaction.interaction.config.SimpleInteraction;
@@ -17,11 +18,7 @@ import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 
 import javax.annotation.Nonnull;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.nio.file.Path;
-import java.util.Optional;
-import java.util.UUID;
 import java.util.logging.Level;
 
 public final class EcoCoins extends JavaPlugin {
@@ -29,11 +26,14 @@ public final class EcoCoins extends JavaPlugin {
     private static final InteractionType COIN_INTERACTION_TRIGGER = InteractionType.Secondary;
     private static final String COIN_CUSTOM_INTERACTION_ID = "EcoCoins_CoinRedeem";
     private static final boolean REDEEM_DEBUG_LOGS = true;
+    private static final boolean INPUT_DEBUG_LOGS = true;
+    private static final boolean RAW_INPUT_DEBUG_LOGS = true;
 
     private ConfigBootstrap bootstrap;
     private LanguageManager languageManager;
     private CoinManager coinManager;
     private TheEconomyService economy;
+    private CoinRedeemService coinRedeemService;
 
     public EcoCoins(@Nonnull JavaPluginInit init) {
         super(init);
@@ -56,6 +56,7 @@ public final class EcoCoins extends JavaPlugin {
 
             // TheEconomy via reflection (no crashea si falta)
             this.economy = new TheEconomyService(getLogger());
+            this.coinRedeemService = new CoinRedeemService(getLogger(), coinManager, economy, REDEEM_DEBUG_LOGS);
 
             registerCoinInteractionType();
 
@@ -103,70 +104,54 @@ public final class EcoCoins extends JavaPlugin {
             // =========================
             // LISTENER CLICK DERECHO
             // =========================
+            getLogger().at(Level.INFO).log("[EcoCoins] registrando listener PlayerInteractEvent");
             getEventRegistry().registerGlobal(PlayerInteractEvent.class, event -> {
-                InteractionType t = event.getActionType();
-                if (!isCoinRedeemInteraction(t)) return;
+                InteractionType action = event.getActionType();
+                String itemId = resolveItemId(event.getItemInHand());
+                debugInput("PlayerInteractEvent action=" + action + " itemId=" + itemId);
+                if (!isCoinRedeemInteraction(action)) return;
 
                 ItemStack hand = event.getItemInHand();
-                if (hand == null || hand.isEmpty()) {
-                    debugRedeem("ignorado: mano vacía para trigger=" + t);
-                    return;
+                var player = event.getPlayer();
+                boolean processed = coinRedeemService.redeemFromHandIfEcoCoin(player, action, hand);
+                if (processed) {
+                    event.setCancelled(true);
+                } else {
+                    debugInput("PlayerInteractEvent sin canje action=" + action + " itemId=" + itemId);
                 }
+            });
 
-                String itemId = resolveItemId(hand);
-                if (itemId == null || itemId.isBlank()) {
-                    debugRedeem("ignorado: itemId vacío (getItemId/getItem().getId) para trigger=" + t);
-                    return;
-                }
-                Optional<CoinDefinition> coinOpt = coinManager.findByItemId(itemId);
-                if (coinOpt.isEmpty()) {
-                    debugRedeem("ignorado: itemId no mapeado en Coins JSON -> " + itemId);
-                    return; // no es una moneda EcoCoins
-                }
+            // Fallback: algunos items custom no disparan PlayerInteractEvent al click derecho.
+            // En ese caso usamos el evento de mouse para diagnosticar y canjear.
+            getLogger().at(Level.INFO).log("[EcoCoins] registrando listener PlayerMouseButtonEvent");
+            getEventRegistry().registerGlobal(PlayerMouseButtonEvent.class, event -> {
+                var mouse = event.getMouseButton();
+                var item = event.getItemInHand();
+                String itemId = (item != null) ? item.getId() : null;
+                debugRawInput("PlayerMouseButtonEvent button="
+                        + (mouse != null ? mouse.mouseButtonType : null)
+                        + " state="
+                        + (mouse != null ? mouse.state : null)
+                        + " clicks="
+                        + (mouse != null ? mouse.clicks : null)
+                        + " itemId=" + itemId);
 
-                event.setCancelled(true);
+                if (mouse == null) return;
+                if (mouse.mouseButtonType != MouseButtonType.Right) return;
+                if (mouse.state != MouseButtonState.Pressed) return;
 
                 var player = event.getPlayer();
-
-                if (!economy.isAvailable()) {
-                    debugRedeem("fallo: TheEconomy no disponible para itemId=" + itemId);
-                    player.sendMessage(Message.raw("[EcoCoins] TheEconomy no está disponible."));
-                    return;
+                debugInput("PlayerMouseButtonEvent right pressed itemId=" + itemId);
+                boolean processed = coinRedeemService.redeemByMouseRightIfEcoCoin(player, itemId);
+                if (processed) {
+                    event.setCancelled(true);
+                } else {
+                    debugInput("PlayerMouseButtonEvent sin canje itemId=" + itemId);
                 }
-
-                CoinDefinition coin = coinOpt.get();
-                if (coin.pay <= 0) {
-                    debugRedeem("fallo: coin.pay <= 0 para itemId=" + itemId + " pay=" + coin.pay);
-                    player.sendMessage(Message.raw("[EcoCoins] Coin inválida: pay debe ser > 0 en JSON."));
-                    return;
-                }
-
-                UUID uuid = player.getPlayerRef().getUuid();
-
-                // consumir 1 moneda física
-                boolean removed = InventoryUtil.removeItemId(player.getInventory(), itemId, 1);
-                if (!removed) {
-                    debugRedeem("fallo: no se pudo remover x1 itemId=" + itemId + " para uuid=" + uuid);
-                    player.sendMessage(Message.raw("[EcoCoins] No tienes suficientes monedas."));
-                    return;
-                }
-
-                // depositar dinero virtual
-                String username = player.getPlayerRef().getUsername();
-                boolean deposited = economy.add(uuid, username, coin.pay);
-                if (!deposited) {
-                    // rollback best-effort
-                    InventoryUtil.addItemId(player.getInventory(), itemId, 1);
-                    debugRedeem("fallo: depósito virtual falló. rollback x1 itemId=" + itemId + " uuid=" + uuid + " username=" + username + " pay=" + coin.pay);
-                    player.sendMessage(Message.raw("[EcoCoins] No pude depositar dinero en TheEconomy."));
-                    return;
-                }
-
-                debugRedeem("ok: canjeado itemId=" + itemId + " pay=" + coin.pay + " uuid=" + uuid);
-                player.sendMessage(Message.raw("[EcoCoins] +" + coin.pay));
             });
 
             getLogger().at(Level.INFO).log("[EcoCoins] start() OK.");
+            getLogger().at(Level.INFO).log("[EcoCoins] EcoCoin:cargado correctamente");
 
         } catch (Throwable t) {
             getLogger().at(Level.SEVERE).log("[EcoCoins] CRASH en start(): " + t);
@@ -182,15 +167,6 @@ public final class EcoCoins extends JavaPlugin {
         getLogger().at(Level.INFO).log("[EcoCoins] shutdown()");
     }
 
-    private static boolean isCoinRedeemInteraction(InteractionType type) {
-        // Modo ideal y estricto: solo Secondary.
-        return type == COIN_INTERACTION_TRIGGER;
-    }
-
-    private void debugRedeem(String message) {
-        if (!REDEEM_DEBUG_LOGS) return;
-        getLogger().at(Level.INFO).log("[EcoCoins][Redeem] " + message);
-    }
 
     private void registerCoinInteractionType() {
         try {
@@ -208,6 +184,16 @@ public final class EcoCoins extends JavaPlugin {
         }
     }
 
+    private void debugInput(String message) {
+        if (!INPUT_DEBUG_LOGS) return;
+        getLogger().at(Level.INFO).log("[EcoCoins][Input] " + message);
+    }
+
+    private void debugRawInput(String message) {
+        if (!RAW_INPUT_DEBUG_LOGS) return;
+        getLogger().at(Level.INFO).log("[EcoCoins][InputRaw] " + message);
+    }
+
     private static String resolveItemId(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return null;
 
@@ -219,5 +205,10 @@ public final class EcoCoins extends JavaPlugin {
         }
 
         return null;
+    }
+
+    private static boolean isCoinRedeemInteraction(InteractionType type) {
+        // Modo ideal y estricto: solo Secondary.
+        return type == COIN_INTERACTION_TRIGGER || type == InteractionType.Use;
     }
 }
