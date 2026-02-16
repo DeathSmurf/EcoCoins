@@ -1,0 +1,25 @@
+{
+  "TranslationProperties": {
+    "Name": "server.items.Coin_Copper.name",
+    "Description": "server.items.Coin_Copper.description"
+  },
+  "Categories": [
+    "Items.Materials"
+  ],
+  "MaxStack": 99,
+  "Icon": "Icons/ItemsGenerated/Coin_Copper.png",
+  "Model": "Items/Coin_Copper.blockymodel",
+  "Texture": "Items/Coin_Copper.png",
+  "Interactions": {
+    "Secondary": {
+      "Interactions": [
+        {
+          "Type": "EcoCoins_CoinRedeem",
+          "Effects": {
+            "LocalSoundEventId": "SFX_UI_Craft"
+          }
+        }
+      ]
+    }
+  }
+}
