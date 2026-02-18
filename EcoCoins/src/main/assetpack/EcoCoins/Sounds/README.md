@@ -6,7 +6,7 @@ Place your redeem sound file here as:
 
 The default sound event definition is in:
 
-- `EcoCoins/SoundEvents/SFX_EcoCoins_Redeem.json`
+- `Server/Audio/SoundEvents/SFX_EcoCoins_Redeem.json`
 
 You can reference this event from your item interaction using:
 

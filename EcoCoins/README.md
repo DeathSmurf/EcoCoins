@@ -83,12 +83,12 @@ Si quieres replicar el patrón de `Interaction Secondary: Type: Simple`, revisa:
 EcoCoins ahora exporta la configuración de sonido editable desde el primer arranque en:
 
 - `ExportedAssetPack/EcoCoins/Sounds/Redeem.ogg`
-- `ExportedAssetPack/EcoCoins/SoundEvents/SFX_EcoCoins_Redeem.json`
+- `ExportedAssetPack/Server/Audio/SoundEvents/SFX_EcoCoins_Redeem.json`
 
 En el proyecto fuente están en:
 
 - `src/main/assetpack/EcoCoins/Sounds/`
-- `src/main/assetpack/EcoCoins/SoundEvents/SFX_EcoCoins_Redeem.json`
+- `src/main/assetpack/Server/Audio/SoundEvents/SFX_EcoCoins_Redeem.json`
 
 Para usarlo en el item/interacción, referencia:
 
