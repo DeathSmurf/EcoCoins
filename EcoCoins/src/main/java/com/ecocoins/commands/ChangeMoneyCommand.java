@@ -210,7 +210,7 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
         private final RequiredArg<Integer> amountArg2;
 
         private ChangeMoneyAmountVariant() {
-            super("Compra una cantidad específica: /change <money_name> <amount>", false);
+            super("Compra una cantidad específica: /change <money_name> <amount>");
             this.requirePermission(PERM_CHANGE_USE);
             this.moneyNameArg2 = withRequiredArg("money_name", "Nombre de moneda (primary o alias).", ArgTypes.STRING);
             this.amountArg2 = withRequiredArg("amount", "Cantidad a comprar.", ArgTypes.INTEGER);
@@ -239,6 +239,22 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
     private final class ChangeMoneyListVariant extends AbstractPlayerCommand {
         private ChangeMoneyListVariant() {
             super("Muestra la lista de monedas: /change", false);
+            this.requirePermission(PERM_CHANGE_LIST);
+        }
+
+        @Override
+        protected void execute(CommandContext ctx,
+                               Store<EntityStore> store,
+                               Ref<EntityStore> playerEntityRef,
+                               PlayerRef playerRef,
+                               World world) {
+            executeList(ctx, store, playerEntityRef, playerRef);
+        }
+    }
+
+    private final class ChangeMoneyListVariant extends AbstractPlayerCommand {
+        private ChangeMoneyListVariant() {
+            super("Muestra la lista de monedas: /change");
             this.requirePermission(PERM_CHANGE_LIST);
         }
 
