@@ -80,11 +80,17 @@ Si quieres replicar el patrón de `Interaction Secondary: Type: Simple`, revisa:
 
 ## Sonido de canje (redeem)
 
-Recomendado: manejarlo por **assetpack** para poder cambiarlo sin hardcodear lógica.
+EcoCoins ahora exporta la configuración de sonido editable desde el primer arranque en:
 
-1. Coloca el `.ogg` en una ruta de sonidos del assetpack, por ejemplo:
-   - `Common/Sounds/EcoCoins/Redeem.ogg`
-2. Declara su `SoundEvent` en `Server/Audio/SoundEvents/...`
-3. Referencia ese `SoundEventId` desde la interacción/item (`Effects.LocalSoundEventId`) o desde una interacción custom.
+- `ExportedAssetPack/EcoCoins/Sounds/`
 
-Esto facilita personalización posterior en servidor sin tocar Java.
+En el proyecto fuente están en:
+
+- `src/main/assetpack/EcoCoins/Sounds/`
+
+Para usarlo en el item/interacción, referencia:
+
+- `LocalSoundEventId: "SFX_EcoCoins_Redeem"` (si defines tu evento custom), o
+- fallback automático del plugin: `SFX_UI_Craft` si el custom no existe.
+
+> Nota: para evitar problemas de compatibilidad en entornos que no aceptan binarios en PR, el `.ogg` no se commitea aquí; se coloca en el assetpack exportado del servidor.
