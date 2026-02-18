@@ -37,7 +37,7 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
     private final OptionalArg<Integer> amountArg;
 
     public ChangeMoneyCommand(LanguageManager lang, CoinManager coins, TheEconomyService economy) {
-        super("change", "Convierte dinero virtual (TheEconomy) en monedas físicas (EcoCoins).", true);
+        super("change", "Convierte dinero virtual (TheEconomy) en monedas físicas (EcoCoins).", false);
 
         this.lang = lang;
         this.coins = coins;
