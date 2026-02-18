@@ -62,3 +62,30 @@ Si quieres replicar el patrón de `Interaction Secondary: Type: Simple`, revisa:
 - `docs/reference/BooksAndPapers/src/main/resources/Server/Item/Items/Books/Books_And_Papers_Book.json`
 - guía de EcoCoins: `docs/reference/EcoCoins_SecondaryInteraction_Guide.md`
 - plantilla lista para copiar: `docs/reference/templates/Template_EcoCoins_Coin_Item.json`
+
+## Nodos de permisos (LuckPerms)
+
+- `ecocoins.redeem.use`  
+  Permite canjear monedas físicas desde la mano al balance digital.
+- `ecocoins.command.change.use`  
+  Permite usar `/change <moneda>` y `/change <moneda> <cantidad>`.
+- `ecocoins.command.change.list`  
+  Permite usar `/change` y `/change list` para ver monedas y `pay`.
+
+## Comandos disponibles
+
+- `/change` → muestra la lista de monedas y su valor (`pay`).
+- `/change list` → igual que `/change`.
+- `/change <moneda>` → compra 1 moneda física.
+- `/change <moneda> <cantidad>` → compra una cantidad específica.
+
+## Sonido de canje (redeem)
+
+Recomendado: manejarlo por **assetpack** para poder cambiarlo sin hardcodear lógica.
+
+1. Coloca el `.ogg` en una ruta de sonidos del assetpack, por ejemplo:
+   - `Common/Sounds/EcoCoins/Redeem.ogg`
+2. Declara su `SoundEvent` en `Server/Audio/SoundEvents/...`
+3. Referencia ese `SoundEventId` desde la interacción/item (`Effects.LocalSoundEventId`) o desde una interacción custom.
+
+Esto facilita personalización posterior en servidor sin tocar Java.

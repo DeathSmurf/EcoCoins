@@ -47,6 +47,10 @@ public final class CoinManager {
 
     public int countCoins() { return coins.size(); }
 
+    public List<CoinDefinition> getCoinsSnapshot() {
+        return List.copyOf(coins);
+    }
+
     public Optional<CoinDefinition> findByMoneyName(String name) {
         if (name == null) return Optional.empty();
         String n = name.trim().toLowerCase(Locale.ROOT);

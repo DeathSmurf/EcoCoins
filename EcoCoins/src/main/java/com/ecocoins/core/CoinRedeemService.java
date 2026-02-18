@@ -13,6 +13,8 @@ import java.util.logging.Level;
 
 public final class CoinRedeemService {
 
+    public static final String PERM_REDEEM_USE = "ecocoins.redeem.use";
+
     private final HytaleLogger logger;
     private final CoinManager coinManager;
     private final TheEconomyService economy;
@@ -48,6 +50,11 @@ public final class CoinRedeemService {
 
     private boolean redeemByItemId(Player player, String itemId, String source) {
         if (player == null) return false;
+
+        if (!player.hasPermission(PERM_REDEEM_USE)) {
+            player.sendMessage(tr(player, "common.no_permission"));
+            return true;
+        }
 
         if (itemId == null || itemId.isBlank()) {
             debug("ignorado: itemId vacío (source=" + source + ")");
