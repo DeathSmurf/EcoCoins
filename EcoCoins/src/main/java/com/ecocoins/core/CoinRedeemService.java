@@ -2,9 +2,12 @@ package com.ecocoins.core;
 
 import com.ecocoins.model.CoinDefinition;
 import com.hypixel.hytale.protocol.InteractionType;
+import com.hypixel.hytale.protocol.SoundCategory;
 import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.server.core.asset.type.soundevent.config.SoundEvent;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
+import com.hypixel.hytale.server.core.universe.world.SoundUtil;
 import com.hypixel.hytale.logger.HytaleLogger;
 
 import java.util.Optional;
@@ -14,6 +17,7 @@ import java.util.logging.Level;
 public final class CoinRedeemService {
 
     public static final String PERM_REDEEM_USE = "ecocoins.redeem.use";
+    private static final String REDEEM_SOUND_EVENT_ID = "SFX_EcoCoins_Redeem";
 
     private final HytaleLogger logger;
     private final CoinManager coinManager;
@@ -101,9 +105,24 @@ public final class CoinRedeemService {
             return true;
         }
 
+        playRedeemSound(player);
         debug("ok: canjeado itemId=" + itemId + " pay=" + coin.pay + " uuid=" + uuid + " (source=" + source + ")");
         player.sendMessage(tr(player, "redeem.success", java.util.Map.of("pay", coin.pay)));
         return true;
+    }
+
+    private void playRedeemSound(Player player) {
+        try {
+            int soundEventIndex = SoundEvent.getAssetMap().getIndexOrDefault(REDEEM_SOUND_EVENT_ID, SoundEvent.EMPTY_ID);
+            if (soundEventIndex == SoundEvent.EMPTY_ID) {
+                debug("aviso: SoundEvent no encontrado: " + REDEEM_SOUND_EVENT_ID);
+                return;
+            }
+
+            SoundUtil.playSoundEvent2dToPlayer(player.getPlayerRef(), soundEventIndex, SoundCategory.SFX);
+        } catch (Throwable t) {
+            debug("aviso: no se pudo reproducir sound redeem: " + t.getClass().getSimpleName() + ": " + t.getMessage());
+        }
     }
 
     private static boolean isRedeemTrigger(InteractionType actionType) {
