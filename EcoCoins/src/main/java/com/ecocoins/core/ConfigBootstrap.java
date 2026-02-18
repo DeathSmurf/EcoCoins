@@ -60,9 +60,11 @@ public final class ConfigBootstrap {
             Files.createDirectories(externalPluginFolder);
             copyFromJarNoOverwriteWithFallback(ASSETPACK_PLUGIN_PREFIX + "Coins/", externalPluginFolder.resolve("Coins"));
             copyFromJarNoOverwriteWithFallback(ASSETPACK_PLUGIN_PREFIX + "Languages/", externalPluginFolder.resolve("Languages"));
+            copyFromJarNoOverwriteWithFallback(ASSETPACK_PLUGIN_PREFIX + "Sounds/", externalPluginFolder.resolve("Sounds"));
+            copyFromJarNoOverwriteWithFallback("Server/Audio/SoundEvents/", externalPluginFolder.resolve("Server/Audio/SoundEvents"));
         } catch (Exception e) {
             logger.at(Level.WARNING).log(
-                    "[EcoCoins] No pude exportar configs (Coins/Languages). Continúo igual. Causa: %s",
+                    "[EcoCoins] No pude exportar configs (Coins/Languages/Sounds/ServerAudio). Continúo igual. Causa: %s",
                     e.toString()
             );
         }
@@ -74,13 +76,15 @@ public final class ConfigBootstrap {
             // Crear la carpeta para los assets exportados si no existe
             Files.createDirectories(externalAssetPackFolder);
 
-            // Exportar solo las carpetas necesarias (EcoCoins/Coins y EcoCoins/Languages)
+            // Exportar carpetas editables de EcoCoins
             copyFromJarNoOverwriteWithFallback(ASSETPACK_PLUGIN_PREFIX + "Coins/", externalAssetPackFolder.resolve("EcoCoins/Coins"));
             copyFromJarNoOverwriteWithFallback(ASSETPACK_PLUGIN_PREFIX + "Languages/", externalAssetPackFolder.resolve("EcoCoins/Languages"));
+            copyFromJarNoOverwriteWithFallback(ASSETPACK_PLUGIN_PREFIX + "Sounds/", externalAssetPackFolder.resolve("EcoCoins/Sounds"));
+            copyFromJarNoOverwriteWithFallback("Server/Audio/SoundEvents/", externalAssetPackFolder.resolve("Server/Audio/SoundEvents"));
 
         } catch (Exception e) {
             logger.at(Level.WARNING).log(
-                    "[EcoCoins] No pude exportar assetpack (EcoCoins/Coins y EcoCoins/Languages). Continúo igual. Causa: %s",
+                    "[EcoCoins] No pude exportar assetpack (EcoCoins/Coins/Languages/Sounds/ServerAudio). Continúo igual. Causa: %s",
                     e.toString()
             );
         }
