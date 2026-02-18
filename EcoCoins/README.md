@@ -84,4 +84,4 @@ EcoCoins usa `EcoCoins/Sounds/Redeem.ogg` mediante el evento `SFX_EcoCoins_Redee
 
 Rutas:
 - Fuente del plugin: `src/main/assetpack/EcoCoins/Sounds/Redeem.ogg`
-- Evento: `src/main/assetpack/Server/Audio/SoundEvents/SFX_EcoCoins_Redeem.json`
+- Evento: `src/main/assetpack/EcoCoins/Audio/SoundEvents/SFX_EcoCoins_Redeem.json`
