@@ -16,12 +16,14 @@ public final class CoinRedeemService {
     private final HytaleLogger logger;
     private final CoinManager coinManager;
     private final TheEconomyService economy;
+    private final LanguageManager languageManager;
     private final boolean debugLogs;
 
-    public CoinRedeemService(HytaleLogger logger, CoinManager coinManager, TheEconomyService economy, boolean debugLogs) {
+    public CoinRedeemService(HytaleLogger logger, CoinManager coinManager, TheEconomyService economy, LanguageManager languageManager, boolean debugLogs) {
         this.logger = logger;
         this.coinManager = coinManager;
         this.economy = economy;
+        this.languageManager = languageManager;
         this.debugLogs = debugLogs;
     }
 
@@ -60,14 +62,14 @@ public final class CoinRedeemService {
 
         if (!economy.isAvailable()) {
             debug("fallo: TheEconomy no disponible para itemId=" + itemId);
-            player.sendMessage(Message.raw("[EcoCoins] TheEconomy no está disponible."));
+            player.sendMessage(tr(player, "redeem.economy_unavailable"));
             return true;
         }
 
         CoinDefinition coin = coinOpt.get();
         if (coin.pay <= 0) {
             debug("fallo: coin.pay <= 0 para itemId=" + itemId + " pay=" + coin.pay);
-            player.sendMessage(Message.raw("[EcoCoins] Coin inválida: pay debe ser > 0 en JSON."));
+            player.sendMessage(tr(player, "redeem.invalid_pay"));
             return true;
         }
 
@@ -77,7 +79,7 @@ public final class CoinRedeemService {
         boolean removed = InventoryUtil.removeItemId(player.getInventory(), itemId, 1);
         if (!removed) {
             debug("fallo: no se pudo remover x1 itemId=" + itemId + " para uuid=" + uuid);
-            player.sendMessage(Message.raw("[EcoCoins] No tienes suficientes monedas."));
+            player.sendMessage(tr(player, "redeem.no_coin"));
             return true;
         }
 
@@ -88,12 +90,12 @@ public final class CoinRedeemService {
             // rollback best-effort
             InventoryUtil.addItemId(player.getInventory(), itemId, 1);
             debug("fallo: depósito virtual falló. rollback x1 itemId=" + itemId + " uuid=" + uuid + " username=" + username + " pay=" + coin.pay);
-            player.sendMessage(Message.raw("[EcoCoins] No pude depositar dinero en TheEconomy."));
+            player.sendMessage(tr(player, "redeem.deposit_failed"));
             return true;
         }
 
         debug("ok: canjeado itemId=" + itemId + " pay=" + coin.pay + " uuid=" + uuid + " (source=" + source + ")");
-        player.sendMessage(Message.raw("[EcoCoins] +" + coin.pay));
+        player.sendMessage(tr(player, "redeem.success", java.util.Map.of("pay", coin.pay)));
         return true;
     }
 
@@ -101,7 +103,18 @@ public final class CoinRedeemService {
         return actionType == InteractionType.Secondary || actionType == InteractionType.Use;
     }
 
+    private Message tr(Player player, String key) {
+        String lang = languageManager.resolveLang(player.getPlayerRef().getLanguage());
+        return languageManager.trMsg(lang, key, java.util.Map.of());
+    }
+
+    private Message tr(Player player, String key, java.util.Map<String, Object> vars) {
+        String lang = languageManager.resolveLang(player.getPlayerRef().getLanguage());
+        return languageManager.trMsg(lang, key, vars);
+    }
+
     private void debug(String message) {
+
         if (!debugLogs) return;
         logger.at(Level.INFO).log("[EcoCoins][Redeem] " + message);
     }

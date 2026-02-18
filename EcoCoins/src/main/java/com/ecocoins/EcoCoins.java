@@ -8,11 +8,6 @@ import com.ecocoins.core.LanguageManager;
 import com.ecocoins.core.TheEconomyService;
 import com.ecocoins.interactions.CoinRedeemInteraction;
 import com.hypixel.hytale.protocol.InteractionType;
-import com.hypixel.hytale.protocol.MouseButtonState;
-import com.hypixel.hytale.protocol.MouseButtonType;
-import com.hypixel.hytale.server.core.event.events.player.PlayerInteractEvent;
-import com.hypixel.hytale.server.core.event.events.player.PlayerMouseButtonEvent;
-import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.modules.interaction.interaction.config.Interaction;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
@@ -26,9 +21,7 @@ public final class EcoCoins extends JavaPlugin {
     private static EcoCoins instance;
     private static final InteractionType COIN_INTERACTION_TRIGGER = InteractionType.Secondary;
     private static final String COIN_CUSTOM_INTERACTION_ID = "EcoCoins_CoinRedeem";
-    private static final boolean REDEEM_DEBUG_LOGS = true;
-    private static final boolean INPUT_DEBUG_LOGS = true;
-    private static final boolean RAW_INPUT_DEBUG_LOGS = true;
+    private static final boolean REDEEM_DEBUG_LOGS = false;
 
     private ConfigBootstrap bootstrap;
     private LanguageManager languageManager;
@@ -58,7 +51,7 @@ public final class EcoCoins extends JavaPlugin {
 
             // TheEconomy via reflection (no crashea si falta)
             this.economy = new TheEconomyService(getLogger());
-            this.coinRedeemService = new CoinRedeemService(getLogger(), coinManager, economy, REDEEM_DEBUG_LOGS);
+            this.coinRedeemService = new CoinRedeemService(getLogger(), coinManager, economy, languageManager, REDEEM_DEBUG_LOGS);
 
             registerCoinInteractionType();
 
@@ -103,43 +96,6 @@ public final class EcoCoins extends JavaPlugin {
         getLogger().at(Level.INFO).log("[EcoCoins] start()... interactionTrigger=" + COIN_INTERACTION_TRIGGER);
 
         try {
-            // =========================
-            // LISTENER CLICK DERECHO
-            // =========================
-            getLogger().at(Level.INFO).log("[EcoCoins] registrando listener PlayerInteractEvent");
-            getEventRegistry().registerGlobal(PlayerInteractEvent.class, event -> {
-                InteractionType action = event.getActionType();
-                String itemId = resolveItemId(event.getItemInHand());
-                debugInput("PlayerInteractEvent action=" + action + " itemId=" + itemId);
-                if (!isCoinRedeemInteraction(action)) return;
-
-                // Diagnóstico solamente: el canje real ahora ocurre dentro de CoinRedeemInteraction
-                // cuando el item ejecuta Type: EcoCoins_CoinRedeem.
-                debugInput("PlayerInteractEvent recibido action=" + action + " itemId=" + itemId);
-            });
-
-            // Fallback: algunos items custom no disparan PlayerInteractEvent al click derecho.
-            // En ese caso usamos el evento de mouse para diagnosticar y canjear.
-            getLogger().at(Level.INFO).log("[EcoCoins] registrando listener PlayerMouseButtonEvent");
-            getEventRegistry().registerGlobal(PlayerMouseButtonEvent.class, event -> {
-                var mouse = event.getMouseButton();
-                var item = event.getItemInHand();
-                String itemId = (item != null) ? item.getId() : null;
-                debugRawInput("PlayerMouseButtonEvent button="
-                        + (mouse != null ? mouse.mouseButtonType : null)
-                        + " state="
-                        + (mouse != null ? mouse.state : null)
-                        + " clicks="
-                        + (mouse != null ? mouse.clicks : null)
-                        + " itemId=" + itemId);
-
-                if (mouse == null) return;
-                if (mouse.mouseButtonType != MouseButtonType.Right) return;
-                if (mouse.state != MouseButtonState.Pressed) return;
-
-                debugInput("PlayerMouseButtonEvent right pressed itemId=" + itemId);
-            });
-
             getLogger().at(Level.INFO).log("[EcoCoins] start() OK.");
             getLogger().at(Level.INFO).log("[EcoCoins] EcoCoin:cargado correctamente");
 
@@ -174,29 +130,6 @@ public final class EcoCoins extends JavaPlugin {
         }
     }
 
-    private void debugInput(String message) {
-        if (!INPUT_DEBUG_LOGS) return;
-        getLogger().at(Level.INFO).log("[EcoCoins][Input] " + message);
-    }
-
-    private void debugRawInput(String message) {
-        if (!RAW_INPUT_DEBUG_LOGS) return;
-        getLogger().at(Level.INFO).log("[EcoCoins][InputRaw] " + message);
-    }
-
-    private static String resolveItemId(ItemStack stack) {
-        if (stack == null || stack.isEmpty()) return null;
-
-        String direct = stack.getItemId();
-        if (direct != null && !direct.isBlank()) return direct;
-
-        if (stack.getItem() != null && stack.getItem().getId() != null && !stack.getItem().getId().isBlank()) {
-            return stack.getItem().getId();
-        }
-
-        return null;
-    }
-
     public static EcoCoins getInstance() {
         return instance;
     }
@@ -205,8 +138,4 @@ public final class EcoCoins extends JavaPlugin {
         return coinRedeemService;
     }
 
-    private static boolean isCoinRedeemInteraction(InteractionType type) {
-        // Modo ideal y estricto: solo Secondary.
-        return type == COIN_INTERACTION_TRIGGER || type == InteractionType.Use;
-    }
 }
