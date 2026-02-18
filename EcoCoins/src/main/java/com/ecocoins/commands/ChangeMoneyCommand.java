@@ -33,8 +33,9 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
     private final CoinManager coins;
     private final TheEconomyService economy;
 
-    private final OptionalArg<String> moneyNameArg;
-    private final OptionalArg<Integer> amountArg;
+    private final RequiredArg<String> moneyNameArg;
+    @SuppressWarnings("unused")
+    private final DefaultArg<Integer> amountDefaultArg;
 
     public ChangeMoneyCommand(LanguageManager lang, CoinManager coins, TheEconomyService economy) {
         super("change", "Convierte dinero virtual (TheEconomy) en monedas físicas (EcoCoins).", false);
@@ -45,8 +46,11 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
 
         this.requirePermission(PERM_CHANGE_USE);
 
-        this.moneyNameArg = withOptionalArg("money_name", "Nombre de moneda (primary o alias).", ArgTypes.STRING);
-        this.amountArg = withOptionalArg("amount", "Cantidad a comprar.", ArgTypes.INTEGER);
+        this.moneyNameArg = withRequiredArg("money_name", "Nombre de moneda (primary o alias).", ArgTypes.STRING);
+        this.amountDefaultArg = withDefaultArg("amount", "Cantidad a comprar.", ArgTypes.INTEGER, 1, "1");
+
+        addUsageVariant(new ChangeMoneyAmountVariant());
+        addUsageVariant(new ChangeMoneyListVariant());
     }
 
     @Override
@@ -57,16 +61,12 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
                            World world) {
         String moneyName = ctx.get(moneyNameArg);
 
-        if (moneyName == null || moneyName.isBlank()) {
+        if (moneyName != null && moneyName.equalsIgnoreCase("list")) {
             executeList(ctx, store, playerEntityRef, playerRef);
             return;
         }
 
-        int amount = 1;
-        Integer maybeAmount = ctx.get(amountArg);
-        if (maybeAmount != null) amount = maybeAmount;
-
-        executePurchase(ctx, store, playerEntityRef, playerRef, moneyName, amount);
+        executePurchase(ctx, store, playerEntityRef, playerRef, moneyName, 1);
     }
 
     private void executePurchase(CommandContext ctx,
@@ -203,5 +203,52 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
             else sb.append(", ").append(a);
         }
         return sb.toString();
+    }
+
+    private final class ChangeMoneyAmountVariant extends AbstractPlayerCommand {
+        private final RequiredArg<String> moneyNameArg2;
+        private final RequiredArg<Integer> amountArg2;
+
+        private ChangeMoneyAmountVariant() {
+            super("Compra una cantidad específica: /change <money_name> <amount>", false);
+            this.requirePermission(PERM_CHANGE_USE);
+            this.moneyNameArg2 = withRequiredArg("money_name", "Nombre de moneda (primary o alias).", ArgTypes.STRING);
+            this.amountArg2 = withRequiredArg("amount", "Cantidad a comprar.", ArgTypes.INTEGER);
+        }
+    }
+
+        @Override
+        protected void execute(CommandContext ctx,
+                               Store<EntityStore> store,
+                               Ref<EntityStore> playerEntityRef,
+                               PlayerRef playerRef,
+                               World world) {
+            String moneyName = ctx.get(moneyNameArg2);
+            int amount = ctx.get(amountArg2);
+
+            if (moneyName != null && moneyName.equalsIgnoreCase("list")) {
+                executeList(ctx, store, playerEntityRef, playerRef);
+                return;
+            }
+
+            ChangeMoneyCommand.this.executePurchase(ctx, store, playerEntityRef, playerRef, moneyName, amount);
+        }
+        return sb.toString();
+    }
+
+    private final class ChangeMoneyListVariant extends AbstractPlayerCommand {
+        private ChangeMoneyListVariant() {
+            super("Muestra la lista de monedas: /change", false);
+            this.requirePermission(PERM_CHANGE_LIST);
+        }
+
+        @Override
+        protected void execute(CommandContext ctx,
+                               Store<EntityStore> store,
+                               Ref<EntityStore> playerEntityRef,
+                               PlayerRef playerRef,
+                               World world) {
+            executeList(ctx, store, playerEntityRef, playerRef);
+        }
     }
 }
