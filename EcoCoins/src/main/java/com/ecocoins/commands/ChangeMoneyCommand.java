@@ -175,14 +175,14 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
 
             String aliasJoined = joinAliases(c.money_name != null ? c.money_name.aliases : null, pLang);
 
-            String lineRaw = lang.tr(pLang, "command.change.list.entry", Map.of(
+            Message linePrefix = lang.trMsg(pLang, "command.change.list.entry", Map.of(
                     "pay", c.pay,
                     "primary", primary,
                     "aliases", aliasJoined
             ));
 
             Message itemName = Message.translation("server.items." + itemId + ".name");
-            Message line = Message.join(Message.raw(lineRaw + " "), itemName);
+            Message line = Message.join(linePrefix, Message.raw(" "), itemName);
             ctx.sendMessage(line);
         }
     }
