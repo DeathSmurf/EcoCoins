@@ -70,12 +70,11 @@ Si quieres replicar el patrón de `Interaction Secondary: Type: Simple`, revisa:
 - `ecocoins.command.change.use`  
   Permite usar `/change <moneda>` y `/change <moneda> <cantidad>`.
 - `ecocoins.command.change.list`  
-  Permite usar `/change` y `/change list` para ver monedas y `pay`.
+  Permite usar `/change` para ver monedas y `pay`.
 
 ## Comandos disponibles
 
 - `/change` → muestra la lista de monedas y su valor (`pay`).
-- `/change list` → igual que `/change`.
 - `/change <moneda>` → compra 1 moneda física.
 - `/change <moneda> <cantidad>` → compra una cantidad específica.
 
