@@ -18,6 +18,7 @@ public final class CoinRedeemService {
 
     public static final String PERM_REDEEM_USE = "ecocoins.redeem.use";
     private static final String REDEEM_SOUND_EVENT_ID = "SFX_EcoCoins_Redeem";
+    private static final String REDEEM_FALLBACK_SOUND_EVENT_ID = "SFX_UI_Craft";
 
     private final HytaleLogger logger;
     private final CoinManager coinManager;
@@ -115,13 +116,17 @@ public final class CoinRedeemService {
         try {
             int soundEventIndex = SoundEvent.getAssetMap().getIndexOrDefault(REDEEM_SOUND_EVENT_ID, SoundEvent.EMPTY_ID);
             if (soundEventIndex == SoundEvent.EMPTY_ID) {
-                debug("aviso: SoundEvent no encontrado: " + REDEEM_SOUND_EVENT_ID);
-                return;
+                soundEventIndex = SoundEvent.getAssetMap().getIndexOrDefault(REDEEM_FALLBACK_SOUND_EVENT_ID, SoundEvent.EMPTY_ID);
+                if (soundEventIndex == SoundEvent.EMPTY_ID) {
+                    debug("aviso: SoundEvent no encontrado: " + REDEEM_SOUND_EVENT_ID + " (fallback " + REDEEM_FALLBACK_SOUND_EVENT_ID + " tampoco existe)");
+                    return;
+                }
+                debug("aviso: usando fallback de sonido: " + REDEEM_FALLBACK_SOUND_EVENT_ID);
             }
 
             SoundUtil.playSoundEvent2dToPlayer(player.getPlayerRef(), soundEventIndex, SoundCategory.SFX);
         } catch (Throwable t) {
-            debug("aviso: no se pudo reproducir sound redeem '" + REDEEM_SOUND_EVENT_ID + "': " + t.getClass().getSimpleName() + ": " + t.getMessage());
+            debug("aviso: no se pudo reproducir sound redeem: " + t.getClass().getSimpleName() + ": " + t.getMessage());
         }
     }
 
