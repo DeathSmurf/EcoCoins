@@ -9,8 +9,7 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
-import com.hypixel.hytale.server.core.command.system.arguments.system.DefaultArg;
-import com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
+import com.hypixel.hytale.server.core.command.system.arguments.system.OptionalArg;
 import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
 import com.hypixel.hytale.server.core.entity.entities.Player;
@@ -18,32 +17,24 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * /change <money_name>
- * /change <money_name> <amount>
- *
- * Importante:
- * - En esta API, DefaultArg NO funciona como argumento posicional.
- * - Para soportar "amount" como segundo token posicional, hay que usar addUsageVariant()
- *   con un comando variante creado usando el constructor "solo descripción" (sin nombre),
- *   o el servidor lanza: "Cannot add a variant command with a name".
- */
 public final class ChangeMoneyCommand extends AbstractPlayerCommand {
+
+    public static final String PERM_CHANGE_USE = "ecocoins.command.change.use";
+    public static final String PERM_CHANGE_LIST = "ecocoins.command.change.list";
 
     private final LanguageManager lang;
     private final CoinManager coins;
     private final TheEconomyService economy;
 
-    // Variante 1 (tu modo actual): /change <money_name>  (amount = 1)
-    private final RequiredArg<String> moneyNameArg;
-
-    // (Puedes mantener este DefaultArg si lo usas en help/auto-doc, pero NO será posicional)
-    @SuppressWarnings("unused")
-    private final DefaultArg<Integer> amountDefaultArg;
+    private final OptionalArg<String> moneyNameArg;
+    private final OptionalArg<Integer> amountArg;
 
     public ChangeMoneyCommand(LanguageManager lang, CoinManager coins, TheEconomyService economy) {
         super("change", "Convierte dinero virtual (TheEconomy) en monedas físicas (EcoCoins).");
@@ -52,13 +43,10 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
         this.coins = coins;
         this.economy = economy;
 
-        this.moneyNameArg = withRequiredArg("money_name", "Nombre de moneda (primary o alias).", ArgTypes.STRING);
+        this.requirePermission(PERM_CHANGE_USE);
 
-        // Esto NO hace que /change gold 3 funcione, pero ayuda en documentación.
-        this.amountDefaultArg = withDefaultArg("amount", "Cantidad a comprar.", ArgTypes.INTEGER, 1, "1");
-
-        // Variante 2 real: /change <money_name> <amount>  (posicional)
-        addUsageVariant(new ChangeMoneyAmountVariant());
+        this.moneyNameArg = withOptionalArg("money_name", "Nombre de moneda (primary o alias).", ArgTypes.STRING);
+        this.amountArg = withOptionalArg("amount", "Cantidad a comprar.", ArgTypes.INTEGER);
     }
 
     @Override
@@ -68,7 +56,17 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
                            PlayerRef playerRef,
                            World world) {
         String moneyName = ctx.get(moneyNameArg);
-        executePurchase(ctx, store, playerEntityRef, playerRef, moneyName, 1);
+
+        if (moneyName == null || moneyName.isBlank()) {
+            executeList(ctx, store, playerEntityRef, playerRef);
+            return;
+        }
+
+        int amount = 1;
+        Integer maybeAmount = ctx.get(amountArg);
+        if (maybeAmount != null) amount = maybeAmount;
+
+        executePurchase(ctx, store, playerEntityRef, playerRef, moneyName, amount);
     }
 
     private void executePurchase(CommandContext ctx,
@@ -84,19 +82,14 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
             return;
         }
 
-        // Resolver idioma UNA sola vez y usarlo en todo el flujo
         String pLang = lang.resolveLang(playerRef.getLanguage());
 
-        // ✅ FIX: si amount <= 0, NO hacer nada y avisar (multilenguaje)
         if (amount <= 0) {
-            ctx.sendMessage(lang.trMsg(pLang, "command.change.invalid_amount", Map.of(
-                    "amount", amount
-            )));
+            ctx.sendMessage(lang.trMsg(pLang, "command.change.invalid_amount", Map.of("amount", amount)));
             return;
         }
 
         Optional<CoinDefinition> coinOpt = coins.findByMoneyName(moneyName);
-
         if (coinOpt.isEmpty()) {
             ctx.sendMessage(lang.trMsg(pLang, "command.change.not_found", Map.of("moneyName", moneyName)));
             return;
@@ -111,43 +104,35 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
         double cost = coin.pay * (double) amount;
 
         if (!economy.isAvailable()) {
-            ctx.sendMessage(Message.raw("[EcoCoins] TheEconomy no está disponible; no puedo retirar balance."));
+            ctx.sendMessage(lang.trMsg(pLang, "command.change.economy_unavailable", Map.of()));
             return;
         }
 
         if (cost <= 0.0) {
-            ctx.sendMessage(Message.raw("[EcoCoins] Coin inválida: pay debe ser > 0 en el JSON."));
+            ctx.sendMessage(lang.trMsg(pLang, "command.change.invalid_pay", Map.of()));
             return;
         }
 
         UUID uuid = playerRef.getUuid();
 
-        // 1) Verificar inventario antes de cobrar
         if (!InventoryUtil.canAddItemId(player.getInventory(), coin.name_item, amount)) {
             ctx.sendMessage(lang.trMsg(pLang, "command.change.inventory_full", Map.of()));
             return;
         }
 
-        // 2) Verificar balance
         if (!economy.has(uuid, cost)) {
-            ctx.sendMessage(lang.trMsg(pLang, "command.change.not_enough_money", Map.of(
-                    "amount", amount,
-                    "cost", cost
-            )));
+            ctx.sendMessage(lang.trMsg(pLang, "command.change.not_enough_money", Map.of("amount", amount, "cost", cost)));
             return;
         }
 
-        // 3) Retirar
         boolean withdrawn = economy.remove(uuid, cost);
         if (!withdrawn) {
-            ctx.sendMessage(Message.raw("[EcoCoins] No pude retirar dinero de TheEconomy."));
+            ctx.sendMessage(lang.trMsg(pLang, "command.change.withdraw_failed", Map.of()));
             return;
         }
 
-        // 4) Dar monedas físicas
         boolean added = InventoryUtil.addItemId(player.getInventory(), coin.name_item, amount);
         if (!added) {
-            // rollback best-effort
             economy.add(uuid, cost);
             ctx.sendMessage(lang.trMsg(pLang, "command.change.inventory_full", Map.of()));
             return;
@@ -160,35 +145,63 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
         )));
     }
 
-    /**
-     * Variante posicional: /change <money_name> <amount>
-     *
-     * IMPORTANTE: Para addUsageVariant, la variante debe crearse con el constructor
-     * AbstractPlayerCommand(String description) (sin nombre), o el server se cae.
-     */
-    private final class ChangeMoneyAmountVariant extends AbstractPlayerCommand {
-
-        private final RequiredArg<String> moneyNameArg2;
-        private final RequiredArg<Integer> amountArg2;
-
-        private ChangeMoneyAmountVariant() {
-            super("Compra una cantidad específica: /change <money_name> <amount>");
-
-            this.moneyNameArg2 = withRequiredArg("money_name", "Nombre de moneda (primary o alias).", ArgTypes.STRING);
-            this.amountArg2 = withRequiredArg("amount", "Cantidad a comprar.", ArgTypes.INTEGER);
+    private void executeList(CommandContext ctx,
+                             Store<EntityStore> store,
+                             Ref<EntityStore> playerEntityRef,
+                             PlayerRef playerRef) {
+        Player player = store.getComponent(playerEntityRef, Player.getComponentType());
+        if (player == null) {
+            ctx.sendMessage(Message.raw("[EcoCoins] No pude resolver el Player entity."));
+            return;
         }
 
-        @Override
-        protected void execute(CommandContext ctx,
-                               Store<EntityStore> store,
-                               Ref<EntityStore> playerEntityRef,
-                               PlayerRef playerRef,
-                               World world) {
-
-            String moneyName = ctx.get(moneyNameArg2);
-            int amount = ctx.get(amountArg2);
-
-            ChangeMoneyCommand.this.executePurchase(ctx, store, playerEntityRef, playerRef, moneyName, amount);
+        if (!player.hasPermission(PERM_CHANGE_LIST)) {
+            String pLang = lang.resolveLang(playerRef.getLanguage());
+            ctx.sendMessage(lang.trMsg(pLang, "common.no_permission", Map.of()));
+            return;
         }
+
+        String pLang = lang.resolveLang(playerRef.getLanguage());
+        ctx.sendMessage(lang.trMsg(pLang, "command.change.list.usage", Map.of()));
+        ctx.sendMessage(lang.trMsg(pLang, "command.change.list.header", Map.of()));
+
+        List<CoinDefinition> defs = new ArrayList<>(coins.getCoinsSnapshot());
+        defs.sort(Comparator.comparingDouble(c -> c.pay));
+
+        for (CoinDefinition c : defs) {
+            String itemId = (c.name_item == null || c.name_item.isBlank()) ? "?" : c.name_item;
+            String primary = (c.money_name != null && c.money_name.primary != null) ? c.money_name.primary : "?";
+            String aliasJoined = joinAliases(c.money_name != null ? c.money_name.aliases : null, pLang);
+
+            Message linePrefix = lang.trMsg(pLang, "command.change.list.entry", Map.of(
+                    "pay", c.pay,
+                    "primary", primary,
+                    "aliases", aliasJoined
+            ));
+
+            Message itemName = Message.translation("server.items." + itemId + ".name");
+            ctx.sendMessage(Message.join(linePrefix, Message.raw(" "), itemName));
+        }
+    }
+
+    private String joinAliases(List<String> aliases, String pLang) {
+        if (aliases == null || aliases.isEmpty()) {
+            return lang.tr(pLang, "command.change.list.no_aliases", Map.of());
+        }
+        if (aliases.size() == 1) return aliases.get(0);
+
+        String orWord = lang.tr(pLang, "common.or", Map.of());
+        if (aliases.size() == 2) {
+            return aliases.get(0) + " " + orWord + " " + aliases.get(1);
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < aliases.size(); i++) {
+            String a = aliases.get(i);
+            if (i == 0) sb.append(a);
+            else if (i == aliases.size() - 1) sb.append(" ").append(orWord).append(" ").append(a);
+            else sb.append(", ").append(a);
+        }
+        return sb.toString();
     }
 }

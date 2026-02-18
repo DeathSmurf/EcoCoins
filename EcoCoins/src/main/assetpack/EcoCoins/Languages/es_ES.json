@@ -3,5 +3,19 @@
   "command.change.not_enough_money": "&cNo tienes suficiente dinero. &7Costo: &e{cost}",
   "command.change.inventory_full": "&cNo tienes espacio en el inventario.",
   "command.change.not_found": "&cLa moneda {moneyName} no existe.",
-  "command.change.invalid_amount": "&cCantidad inválida (&7{amount}&c). Debe ser mayor que 0."
+  "command.change.invalid_amount": "&cCantidad inválida (&7{amount}&c). Debe ser mayor que 0.",
+  "redeem.success": "&aCanje exitoso: &6+{pay}",
+  "redeem.economy_unavailable": "&cTheEconomy no está disponible.",
+  "redeem.invalid_pay": "&cMoneda inválida: &7pay debe ser mayor a 0.",
+  "redeem.no_coin": "&cNo tienes suficientes monedas físicas.",
+  "redeem.deposit_failed": "&cNo pude depositar saldo en TheEconomy.",
+  "command.change.economy_unavailable": "&cTheEconomy no está disponible; no puedo retirar balance.",
+  "command.change.invalid_pay": "&cMoneda inválida: &7pay debe ser mayor a 0.",
+  "command.change.withdraw_failed": "&cNo pude retirar saldo de TheEconomy.",
+  "command.change.list.usage": "&7Usa &e/change <moneda> <cantidad> &7para intercambiar.",
+  "command.change.list.header": "&6Lista de monedas disponibles:",
+  "command.change.list.entry": "&7- (&e{pay} Coins&7) &f{primary}&7, &f{aliases}&7:",
+  "command.change.list.no_aliases": "sin aliases",
+  "common.or": "o",
+  "common.no_permission": "&cNo tienes permiso para usar esto."
 }
