@@ -9,8 +9,7 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
-import com.hypixel.hytale.server.core.command.system.arguments.system.DefaultArg;
-import com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
+import com.hypixel.hytale.server.core.command.system.arguments.system.OptionalArg;
 import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
 import com.hypixel.hytale.server.core.entity.entities.Player;
@@ -216,6 +215,7 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
             this.moneyNameArg2 = withRequiredArg("money_name", "Nombre de moneda (primary o alias).", ArgTypes.STRING);
             this.amountArg2 = withRequiredArg("amount", "Cantidad a comprar.", ArgTypes.INTEGER);
         }
+    }
 
         @Override
         protected void execute(CommandContext ctx,
@@ -233,6 +233,7 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
 
             ChangeMoneyCommand.this.executePurchase(ctx, store, playerEntityRef, playerRef, moneyName, amount);
         }
+        return sb.toString();
     }
 
     private final class ChangeMoneyListVariant extends AbstractPlayerCommand {
