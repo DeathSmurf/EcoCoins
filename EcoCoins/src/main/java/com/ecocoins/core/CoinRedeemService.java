@@ -113,9 +113,15 @@ public final class CoinRedeemService {
 
     private void playRedeemSound(Player player) {
         try {
-            int soundEventIndex = SoundEvent.getAssetMap().getIndexOrDefault(REDEEM_SOUND_EVENT_ID, SoundEvent.EMPTY_ID);
-            if (soundEventIndex == SoundEvent.EMPTY_ID) {
+            SoundEvent event = SoundEvent.getAssetMap().getAsset(REDEEM_SOUND_EVENT_ID);
+            if (event == null) {
                 debug("aviso: SoundEvent no encontrado: " + REDEEM_SOUND_EVENT_ID);
+                return;
+            }
+
+            int soundEventIndex = SoundEvent.getAssetMap().getIndex(REDEEM_SOUND_EVENT_ID);
+            if (soundEventIndex < 0) {
+                debug("aviso: índice inválido para SoundEvent: " + REDEEM_SOUND_EVENT_ID + " idx=" + soundEventIndex);
                 return;
             }
 

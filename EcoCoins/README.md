@@ -80,8 +80,16 @@ Si quieres replicar el patrón de `Interaction Secondary: Type: Simple`, revisa:
 
 ## Sonido de canje (redeem)
 
-EcoCoins usa `EcoCoins/Sounds/Redeem.ogg` mediante el evento `SFX_EcoCoins_Redeem`.
+EcoCoins reproduce `SFX_EcoCoins_Redeem` al canjear balance.
 
-Rutas:
-- Fuente del plugin: `src/main/assetpack/EcoCoins/Sounds/Redeem.ogg`
-- Evento: `src/main/assetpack/EcoCoins/Audio/SoundEvents/SFX_EcoCoins_Redeem.json`
+Rutas de configuración (sí van en el repo):
+- `src/main/assetpack/EcoCoins/Audio/SoundEvents/SFX_EcoCoins_Redeem.json`
+- `src/main/assetpack/Server/Audio/SoundEvents/SFX_EcoCoins_Redeem.json`
+
+Ruta del audio (no se versiona en este entorno):
+- `src/main/assetpack/EcoCoins/Sounds/Redeem.ogg`
+
+Pasos para dejarlo funcionando en tu servidor:
+1. Copia tu `Redeem.ogg` en `ExportedAssetPack/EcoCoins/Sounds/Redeem.ogg`.
+2. Verifica que exista `ExportedAssetPack/Server/Audio/SoundEvents/SFX_EcoCoins_Redeem.json`.
+3. Reinicia el servidor.
