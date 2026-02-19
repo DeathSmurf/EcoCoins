@@ -2,7 +2,7 @@
   "Layers": [
     {
       "Files": [
-        "EcoCoins/Sounds/Redeem.ogg"
+        "Sounds/EcoCoins/Redeem.ogg"
       ],
       "Volume": 0,
       "RandomSettings": {

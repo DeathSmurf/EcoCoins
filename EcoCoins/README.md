@@ -88,9 +88,9 @@ Rutas de configuración (sí van en el repo):
 > Importante: no dupliques el mismo `SFX_EcoCoins_Redeem` en otra carpeta, porque puede fallar la validación por ID de asset duplicado.
 
 Ruta del audio (no se versiona en este entorno):
-- `src/main/assetpack/EcoCoins/Sounds/Redeem.ogg`
+- `src/main/assetpack/Common/Sounds/EcoCoins/Redeem.ogg`
 
 Pasos para dejarlo funcionando en tu servidor:
-1. Copia tu `Redeem.ogg` en `ExportedAssetPack/EcoCoins/Sounds/Redeem.ogg`.
+1. Copia tu `Redeem.ogg` en `ExportedAssetPack/Common/Sounds/EcoCoins/Redeem.ogg`.
 2. Verifica que exista `ExportedAssetPack/Server/Audio/SoundEvents/SFX_EcoCoins_Redeem.json`.
 3. Reinicia el servidor.
