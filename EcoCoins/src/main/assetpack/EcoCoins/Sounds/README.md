@@ -6,5 +6,7 @@ Place this file manually in your exported assetpack:
 
 SoundEvent definitions used by EcoCoins:
 
-- `ExportedAssetPack/EcoCoins/Audio/SoundEvents/SFX_EcoCoins_Redeem.json`
 - `ExportedAssetPack/Server/Audio/SoundEvents/SFX_EcoCoins_Redeem.json`
+
+
+Do not duplicate `SFX_EcoCoins_Redeem` in multiple SoundEvents folders.

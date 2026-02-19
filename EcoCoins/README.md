@@ -83,8 +83,9 @@ Si quieres replicar el patrón de `Interaction Secondary: Type: Simple`, revisa:
 EcoCoins reproduce `SFX_EcoCoins_Redeem` al canjear balance.
 
 Rutas de configuración (sí van en el repo):
-- `src/main/assetpack/EcoCoins/Audio/SoundEvents/SFX_EcoCoins_Redeem.json`
 - `src/main/assetpack/Server/Audio/SoundEvents/SFX_EcoCoins_Redeem.json`
+
+> Importante: no dupliques el mismo `SFX_EcoCoins_Redeem` en otra carpeta, porque puede fallar la validación por ID de asset duplicado.
 
 Ruta del audio (no se versiona en este entorno):
 - `src/main/assetpack/EcoCoins/Sounds/Redeem.ogg`
