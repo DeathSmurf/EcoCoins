@@ -1,2 +1,4 @@
 /.gradle/
 /build/
+# Audio binaries are provided in server assetpack, not committed
+src/main/assetpack/Common/Sounds/EcoCoins/*.ogg
