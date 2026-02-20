@@ -4,10 +4,12 @@ import com.ecocoins.commands.ChangeMoneyCommand;
 import com.ecocoins.core.CoinManager;
 import com.ecocoins.core.ConfigBootstrap;
 import com.ecocoins.core.CoinRedeemService;
+import com.ecocoins.core.CoinPickupSoundService;
 import com.ecocoins.core.LanguageManager;
 import com.ecocoins.core.TheEconomyService;
 import com.ecocoins.interactions.CoinRedeemInteraction;
 import com.hypixel.hytale.protocol.InteractionType;
+import com.hypixel.hytale.server.core.event.events.entity.LivingEntityInventoryChangeEvent;
 import com.hypixel.hytale.server.core.modules.interaction.interaction.config.Interaction;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
@@ -28,6 +30,7 @@ public final class EcoCoins extends JavaPlugin {
     private CoinManager coinManager;
     private TheEconomyService economy;
     private CoinRedeemService coinRedeemService;
+    private CoinPickupSoundService coinPickupSoundService;
 
     public EcoCoins(@Nonnull JavaPluginInit init) {
         super(init);
@@ -52,6 +55,7 @@ public final class EcoCoins extends JavaPlugin {
             // TheEconomy via reflection (no crashea si falta)
             this.economy = new TheEconomyService(getLogger());
             this.coinRedeemService = new CoinRedeemService(getLogger(), coinManager, economy, languageManager, REDEEM_DEBUG_LOGS);
+            this.coinPickupSoundService = new CoinPickupSoundService(getLogger(), coinManager);
 
             registerCoinInteractionType();
 
@@ -67,6 +71,11 @@ public final class EcoCoins extends JavaPlugin {
             } catch (Throwable t) {
                 getLogger().at(Level.WARNING).log("[EcoCoins] Error cargando Coins. Continúo para no perder /change: " + t);
             }
+
+            getEventRegistry().registerGlobal(
+                    LivingEntityInventoryChangeEvent.class,
+                    this::onLivingEntityInventoryChange
+            );
 
             // Registrar /change aunque falle la carga de configuración.
             getCommandRegistry().registerCommand(
@@ -136,6 +145,13 @@ public final class EcoCoins extends JavaPlugin {
 
     public CoinRedeemService getCoinRedeemService() {
         return coinRedeemService;
+    }
+
+    private void onLivingEntityInventoryChange(LivingEntityInventoryChangeEvent event) {
+        if (coinPickupSoundService == null) {
+            return;
+        }
+        coinPickupSoundService.onInventoryChanged(event);
     }
 
 }
