@@ -7,11 +7,14 @@ import com.ecocoins.core.TheEconomyService;
 import com.ecocoins.model.CoinDefinition;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.protocol.SoundCategory;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
+import com.hypixel.hytale.server.core.asset.type.soundevent.config.SoundEvent;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.world.SoundUtil;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
@@ -23,6 +26,7 @@ import java.util.UUID;
 public final class ChangeAllMoneyCommand extends AbstractPlayerCommand {
 
     public static final String PERM_CHANGEALL_USE = "ecocoins.command.changeall.use";
+    private static final String REDEEM_SOUND_EVENT_ID = "SFX_EcoCoins_Redeem";
 
     private final LanguageManager lang;
     private final CoinManager coins;
@@ -100,10 +104,31 @@ public final class ChangeAllMoneyCommand extends AbstractPlayerCommand {
             return;
         }
 
+        playRedeemSound(player);
+
         ctx.sendMessage(lang.trMsg(pLang, "command.changeall.success", Map.of(
                 "coins", totalCoins,
                 "pay", totalPay
         )));
+    }
+
+
+    private void playRedeemSound(Player player) {
+        try {
+            SoundEvent event = SoundEvent.getAssetMap().getAsset(REDEEM_SOUND_EVENT_ID);
+            if (event == null) {
+                return;
+            }
+
+            int soundEventIndex = SoundEvent.getAssetMap().getIndex(REDEEM_SOUND_EVENT_ID);
+            if (soundEventIndex < 0) {
+                return;
+            }
+
+            SoundUtil.playSoundEvent2dToPlayer(player.getPlayerRef(), soundEventIndex, SoundCategory.SFX);
+        } catch (Throwable ignored) {
+            // El sonido es best-effort: no debe romper /changeall.
+        }
     }
 
     private record RemovedCoinBatch(String itemId, int amount) {
