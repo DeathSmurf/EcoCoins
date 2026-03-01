@@ -19,6 +19,8 @@ EcoCoins procesa monedas físicas solo con:
 
 - `InteractionType.Secondary`
 
+> Nota: actualmente el código también acepta `InteractionType.Use` como compatibilidad adicional.
+
 ## Tipos que EcoCoins ignora
 
 EcoCoins ignora otros tipos como `Primary`, `Ability1`, `Ability2`, `Ability3`, `Pick`, etc.
