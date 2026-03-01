@@ -1,5 +1,6 @@
 package com.ecocoins;
 
+import com.ecocoins.commands.ChangeAllMoneyCommand;
 import com.ecocoins.commands.ChangeMoneyCommand;
 import com.ecocoins.core.CoinManager;
 import com.ecocoins.core.ConfigBootstrap;
@@ -80,6 +81,10 @@ public final class EcoCoins extends JavaPlugin {
             // Registrar /change aunque falle la carga de configuración.
             getCommandRegistry().registerCommand(
                     new ChangeMoneyCommand(languageManager, coinManager, economy)
+            );
+
+            getCommandRegistry().registerCommand(
+                    new ChangeAllMoneyCommand(languageManager, coinManager, economy)
             );
 
             getLogger().at(Level.INFO).log(
