@@ -18,7 +18,7 @@
   "command.change.list.no_aliases": "sin aliases",
   "common.or": "o",
   "common.no_permission": "&cNo tienes permiso para usar esto.",
-  "command.changeall.success": "&aCanje total exitoso: &e{coins} &7monedas -> &6+{pay}",
+  "command.changeall.success": "&aCanje total exitoso: &e{coins} Monedas &7> &6+{pay} Coins a tu billetera digital",
   "command.changeall.no_coins": "&cNo tienes monedas EcoCoins en tu inventario para canjear.",
   "command.changeall.economy_unavailable": "&cTheEconomy no está disponible; no puedo depositar balance.",
   "command.changeall.deposit_failed": "&cNo pude depositar el canje total en TheEconomy. Se revirtió el inventario."
