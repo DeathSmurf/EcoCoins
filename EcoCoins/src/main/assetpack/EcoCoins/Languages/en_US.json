@@ -17,5 +17,9 @@
   "command.change.list.entry": "&7- (&e{pay} Coins&7) &f{primary}&7, &f{aliases}&7:",
   "command.change.list.no_aliases": "no aliases",
   "common.or": "or",
-  "common.no_permission": "&cYou do not have permission to use this."
+  "common.no_permission": "&cYou do not have permission to use this.",
+  "command.changeall.success": "&aBulk redeem successful: &e{coins} &7coins -> &6+{pay}",
+  "command.changeall.no_coins": "&cYou don't have EcoCoins in your inventory to redeem.",
+  "command.changeall.economy_unavailable": "&cTheEconomy is not available; I cannot deposit balance.",
+  "command.changeall.deposit_failed": "&cI could not deposit the bulk redeem into TheEconomy. Inventory was rolled back."
 }
