@@ -13,7 +13,7 @@ public final class LanguageManager {
     private final Path langDir;
     private final ObjectMapper mapper = new ObjectMapper();
     private final Map<String, Map<String, String>> messages = new HashMap<>();
-    private String defaultLang = "es_ES";
+    private String defaultLang = "es-ES";
     private boolean forceLang = false;
 
     public LanguageManager(HytaleLogger logger, Path langDir) {
@@ -68,7 +68,7 @@ public final class LanguageManager {
             return normalizedPlayerLang;
         }
 
-        // Compatibilidad entre formatos antiguos (en_US) y nuevos (en-US).
+        // Compatibilidad entre formatos de separador (en-US <-> en_US).
         String swappedSeparator = normalizedPlayerLang.contains("-")
                 ? normalizedPlayerLang.replace('-', '_')
                 : normalizedPlayerLang.replace('_', '-');
