@@ -13,7 +13,7 @@ public final class LanguageManager {
     private final Path langDir;
     private final ObjectMapper mapper = new ObjectMapper();
     private final Map<String, Map<String, String>> messages = new HashMap<>();
-    private String defaultLang = "es_ES";
+    private String defaultLang = "es-ES";
     private boolean forceLang = false;
 
     public LanguageManager(HytaleLogger logger, Path langDir) {
@@ -59,9 +59,30 @@ public final class LanguageManager {
     public int countLanguages() { return messages.size(); }
 
     public String resolveLang(String playerLang) {
-        if (forceLang) return defaultLang;
-        if (playerLang == null || playerLang.isBlank()) return defaultLang;
-        return playerLang;
+        String fallback = normalizeLangCode(defaultLang);
+        if (forceLang) return fallback;
+        if (playerLang == null || playerLang.isBlank()) return fallback;
+
+        String normalizedPlayerLang = normalizeLangCode(playerLang);
+        if (messages.containsKey(normalizedPlayerLang)) {
+            return normalizedPlayerLang;
+        }
+
+        // Compatibilidad entre formatos antiguos (en_US) y nuevos (en-US).
+        String swappedSeparator = normalizedPlayerLang.contains("-")
+                ? normalizedPlayerLang.replace('-', '_')
+                : normalizedPlayerLang.replace('_', '-');
+
+        if (messages.containsKey(swappedSeparator)) {
+            return swappedSeparator;
+        }
+
+        return fallback;
+    }
+
+    private static String normalizeLangCode(String lang) {
+        if (lang == null) return "";
+        return lang.trim().replace('_', '-');
     }
 
     /** Traducción plana (sin colores). */
