@@ -19,6 +19,8 @@ EcoCoins procesa monedas físicas solo con:
 
 - `InteractionType.Secondary`
 
+> Nota: actualmente el código también acepta `InteractionType.Use` como compatibilidad adicional.
+
 ## Tipos que EcoCoins ignora
 
 EcoCoins ignora otros tipos como `Primary`, `Ability1`, `Ability2`, `Ability3`, `Pick`, etc.
@@ -71,12 +73,15 @@ Si quieres replicar el patrón de `Interaction Secondary: Type: Simple`, revisa:
   Permite usar `/change <moneda>` y `/change <moneda> <cantidad>`.
 - `ecocoins.command.change.list`  
   Permite usar `/change` para ver monedas y `pay`.
+- `ecocoins.command.changeall.use`  
+  Permite usar `/changeall` para canjear todas las monedas físicas del inventario.
 
 ## Comandos disponibles
 
 - `/change` → muestra la lista de monedas y su valor (`pay`).
 - `/change <moneda>` → compra 1 moneda física.
 - `/change <moneda> <cantidad>` → compra una cantidad específica.
+- `/changeall` → canjea todas las monedas físicas del inventario al balance digital.
 
 ## Sonido de canje (redeem)
 
