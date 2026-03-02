@@ -13,7 +13,8 @@ public final class LanguageManager {
     private final Path langDir;
     private final ObjectMapper mapper = new ObjectMapper();
     private final Map<String, Map<String, String>> messages = new HashMap<>();
-    private String defaultLang = "es-ES";
+    // Usa el idioma del sistema/host por defecto; luego puede ser sobreescrito por languages.json
+    private String defaultLang = Locale.getDefault().toLanguageTag();
     private boolean forceLang = false;
 
     public LanguageManager(HytaleLogger logger, Path langDir) {
