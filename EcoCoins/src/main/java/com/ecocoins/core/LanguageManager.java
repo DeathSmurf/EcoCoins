@@ -13,7 +13,7 @@ public final class LanguageManager {
     private final Path langDir;
     private final ObjectMapper mapper = new ObjectMapper();
     private final Map<String, Map<String, String>> messages = new HashMap<>();
-    private String defaultLang = "es_ES";
+    private String defaultLang = "es-ES";
     private boolean forceLang = false;
 
     public LanguageManager(HytaleLogger logger, Path langDir) {
@@ -59,15 +59,35 @@ public final class LanguageManager {
     public int countLanguages() { return messages.size(); }
 
     public String resolveLang(String playerLang) {
-        if (forceLang) return defaultLang;
-        if (playerLang == null || playerLang.isBlank()) return defaultLang;
-        return playerLang;
+        String fallback = normalizeLangCode(defaultLang);
+        if (forceLang) return fallback;
+        if (playerLang == null || playerLang.isBlank()) return fallback;
+
+        String normalizedPlayerLang = normalizeLangCode(playerLang);
+        if (messages.containsKey(normalizedPlayerLang)) {
+            return normalizedPlayerLang;
+        }
+
+        // Compatibilidad entre formatos de separador (en-US <-> en_US).
+        String swappedSeparator = normalizedPlayerLang.contains("-")
+                ? normalizedPlayerLang.replace('-', '_')
+                : normalizedPlayerLang.replace('_', '-');
+
+        if (messages.containsKey(swappedSeparator)) {
+            return swappedSeparator;
+        }
+
+        return fallback;
+    }
+
+    private static String normalizeLangCode(String lang) {
+        if (lang == null) return "";
+        return lang.trim().replace('_', '-');
     }
 
     /** Traducción plana (sin colores). */
     public String tr(String lang, String key, Map<String, Object> vars) {
-        String l = (lang == null ? defaultLang : lang);
-        Map<String, String> table = messages.getOrDefault(l, messages.getOrDefault(defaultLang, Map.of()));
+        Map<String, String> table = resolveTable(lang);
         String raw = table.getOrDefault(key, key);
 
         if (vars != null) {
@@ -76,6 +96,36 @@ public final class LanguageManager {
             }
         }
         return raw;
+    }
+
+    private Map<String, String> resolveTable(String lang) {
+        String requested = (lang == null || lang.isBlank()) ? defaultLang : lang;
+
+        Map<String, String> exact = messages.get(requested);
+        if (exact != null) return exact;
+
+        String normalized = normalizeLangCode(requested);
+        Map<String, String> normalizedHit = messages.get(normalized);
+        if (normalizedHit != null) return normalizedHit;
+
+        String swapped = normalized.contains("-")
+                ? normalized.replace('-', '_')
+                : normalized.replace('_', '-');
+        Map<String, String> swappedHit = messages.get(swapped);
+        if (swappedHit != null) return swappedHit;
+
+        Map<String, String> defaultExact = messages.get(defaultLang);
+        if (defaultExact != null) return defaultExact;
+
+        String defaultNormalized = normalizeLangCode(defaultLang);
+        Map<String, String> defaultNormalizedHit = messages.get(defaultNormalized);
+        if (defaultNormalizedHit != null) return defaultNormalizedHit;
+
+        String defaultSwapped = defaultNormalized.contains("-")
+                ? defaultNormalized.replace('-', '_')
+                : defaultNormalized.replace('_', '-');
+
+        return messages.getOrDefault(defaultSwapped, Map.of());
     }
 
     /** Traducción como Message (con soporte de &códigos). */
