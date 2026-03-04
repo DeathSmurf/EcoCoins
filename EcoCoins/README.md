@@ -117,6 +117,16 @@ EcoCoins ahora muestra un HUD de balance en la esquina inferior, siguiendo la re
 - `/changeoff` → oculta el HUD de balance.
 - `/changeon` → vuelve a mostrar el HUD de balance.
 
+
+### Solución al error `Failed to load CustomUI documents`
+
+EcoCoins sigue el patrón funcional de Ecotale para CustomUI:
+- Fuente editable en `src/main/assetpack/Common/UI/Custom/Pages`.
+- Copia de build a `UI/Custom/Pages` (ruta esperada por `Pages/*.ui`).
+- Registro en `assets.json` del assetpack.
+
+Si vuelve a aparecer el error, verifica que el `.jar` desplegado incluya `UI/Custom/Pages/EcoCoins_BalanceHud.ui`.
+
 ### Compatibilidad con MultipleHUD
 
 EcoCoins usa el mod **MultipleHUD** cuando está instalado para permitir múltiples HUD en pantalla al mismo tiempo.
