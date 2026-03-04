@@ -11,7 +11,8 @@ import java.util.logging.Level;
 
 public final class HudHelper {
 
-    private static final String HUD_ID = "ecocoins-balance";
+    // Evitar caracteres raros por si la implementación de MultipleHUD valida IDs.
+    private static final String HUD_ID = "ecocoins";
     private static final List<String> MULTIPLEHUD_CLASS_NAMES = List.of(
             "com.buuz135.mhud.MultipleHUD",
             "MultipleHUD"
@@ -53,21 +54,22 @@ public final class HudHelper {
 
                 multipleHudAvailable = true;
                 EcoCoins.getInstance().getLogger().at(Level.INFO).log(
-                        "[EcoCoins] MultipleHUD detectado: HUD compatible multi-capa activo."
+                        "[EcoCoins] MultipleHUD detectado con clase " + className + ". HUD_ID=" + HUD_ID
                 );
                 return;
             } catch (ClassNotFoundException ignored) {
                 // Intentamos siguiente nombre de clase.
             } catch (Throwable t) {
                 EcoCoins.getInstance().getLogger().at(Level.WARNING).log(
-                        "[EcoCoins] Error inicializando MultipleHUD: " + t.getMessage()
+                        "[EcoCoins] Error inicializando MultipleHUD: " + t.getClass().getSimpleName() + ": " + t.getMessage()
                 );
                 break;
             }
         }
 
-        EcoCoins.getInstance().getLogger().at(Level.INFO).log(
-                "[EcoCoins] MultipleHUD no detectado: se usará HUD vanilla (1 HUD custom)."
+        EcoCoins.getInstance().getLogger().at(Level.WARNING).log(
+                "[EcoCoins] MultipleHUD no detectado: se usará HUD vanilla (1 HUD custom). " +
+                        "Si otro mod ya usa CustomUI HUD, pueden aparecer conflictos de apply commands."
         );
     }
 
@@ -78,7 +80,7 @@ public final class HudHelper {
                 return;
             } catch (Throwable t) {
                 EcoCoins.getInstance().getLogger().at(Level.WARNING).log(
-                        "[EcoCoins] Fallback HUD vanilla por error MultipleHUD: " + t.getMessage()
+                        "[EcoCoins] Falló setCustomHud de MultipleHUD (" + t.getClass().getSimpleName() + "): " + t.getMessage()
                 );
             }
         }

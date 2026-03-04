@@ -124,6 +124,7 @@ EcoCoins ahora muestra un HUD de balance en la esquina inferior, siguiendo la re
 - Para evitar `Failed to apply CustomUI HUD commands`, la posición ya no usa cambios complejos de `Anchor` en runtime: se usan **2 documentos UI simples** (`..._Left.ui` / `..._Right.ui`) y se reconstruye el HUD al alternar posición.
 - Además, el HUD ya **no se re-registra** en cada cambio de balance; sólo se actualiza el texto para evitar conflictos de aplicación de comandos HUD.
 - Las actualizaciones de balance ahora siguen un enfoque **Ecotale-like**: `setText + show()` (sin `update(false, ...)`) para evitar conflictos con comandos incrementales de HUD en ciertos runtimes.
+- `HUD_ID` para MultipleHUD se normalizó a `ecocoins` (sin guiones) y se añadieron logs de diagnóstico para confirmar detección de clase y fallos de reflexión en runtime.
 EcoCoins sigue el patrón funcional de Ecotale para CustomUI:
 - Fuente editable en `src/main/assetpack/Common/UI/Custom/Pages`.
 - Copia de build a `UI/Custom/Pages` (ruta esperada por `Pages/*.ui`).
