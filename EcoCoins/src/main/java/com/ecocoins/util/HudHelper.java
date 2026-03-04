@@ -6,19 +6,16 @@ import com.hypixel.hytale.server.core.entity.entities.player.hud.CustomUIHud;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 
 import java.lang.reflect.Method;
-import java.util.List;
 import java.util.logging.Level;
 
+/**
+ * Helper para registrar HUD con compatibilidad opcional de MultipleHUD.
+ * Patrón alineado con Ecotale: detectar una vez y fallback vanilla si falla la llamada reflectiva.
+ */
 public final class HudHelper {
 
-    // Evitar caracteres raros por si la implementación de MultipleHUD valida IDs.
     private static final String HUD_ID = "ecocoins";
-    private static final List<String> MULTIPLEHUD_CLASS_NAMES = List.of(
-            "com.buuz135.mhud.MultipleHUD",
-            "com.multiplehud.MultipleHUD",
-            "dev.multiplehud.MultipleHUD",
-            "MultipleHUD"
-    );
+    private static final String MULTIPLEHUD_CLASS = "com.buuz135.mhud.MultipleHUD";
 
     private static boolean multipleHudAvailable = false;
     private static Object multipleHudInstance = null;
@@ -29,12 +26,12 @@ public final class HudHelper {
     }
 
     public static void init() {
-        for (String className : MULTIPLEHUD_CLASS_NAMES) {
-            try {
-                Class<?> multipleHudClass = Class.forName(className);
-                Method getInstanceMethod = multipleHudClass.getMethod("getInstance");
-                multipleHudInstance = getInstanceMethod.invoke(null);
+        try {
+            Class<?> multipleHudClass = Class.forName(MULTIPLEHUD_CLASS);
+            Method getInstanceMethod = multipleHudClass.getMethod("getInstance");
+            multipleHudInstance = getInstanceMethod.invoke(null);
 
+            if (multipleHudInstance != null) {
                 setCustomHudMethod = multipleHudClass.getMethod(
                         "setCustomHud",
                         Player.class,
@@ -43,56 +40,31 @@ public final class HudHelper {
                         CustomUIHud.class
                 );
 
-                try {
-                    hideCustomHudMethod = multipleHudClass.getMethod(
-                            "hideCustomHud",
-                            Player.class,
-                            PlayerRef.class,
-                            String.class
-                    );
-                } catch (NoSuchMethodException ignored) {
-                    hideCustomHudMethod = null;
-                }
+                hideCustomHudMethod = multipleHudClass.getMethod(
+                        "hideCustomHud",
+                        Player.class,
+                        PlayerRef.class,
+                        String.class
+                );
 
                 multipleHudAvailable = true;
                 EcoCoins.getInstance().getLogger().at(Level.INFO).log(
-                        "[EcoCoins] MultipleHUD detectado con clase " + className + ". HUD_ID=" + HUD_ID
+                        "[EcoCoins] MultipleHUD detectado, modo compatible activo (HUD_ID=" + HUD_ID + ")."
                 );
-                return;
-            } catch (ClassNotFoundException ignored) {
-                // Intentamos siguiente nombre de clase.
-            } catch (Throwable t) {
-                EcoCoins.getInstance().getLogger().at(Level.WARNING).log(
-                        "[EcoCoins] Error inicializando MultipleHUD: " + t.getClass().getSimpleName() + ": " + t.getMessage()
-                );
-                break;
             }
+        } catch (ClassNotFoundException e) {
+            EcoCoins.getInstance().getLogger().at(Level.INFO).log(
+                    "[EcoCoins] MultipleHUD no detectado, usando HUD vanilla."
+            );
+        } catch (Exception e) {
+            EcoCoins.getInstance().getLogger().at(Level.WARNING).log(
+                    "[EcoCoins] Fallo inicializando compatibilidad MultipleHUD: " + e.getMessage()
+            );
         }
-
-        EcoCoins.getInstance().getLogger().at(Level.WARNING).log(
-                "[EcoCoins] MultipleHUD no detectado: se usará HUD vanilla (1 HUD custom). " +
-                        "Si otro mod ya usa CustomUI HUD, pueden aparecer conflictos de apply commands."
-        );
     }
 
     public static boolean isMultipleHudAvailable() {
         return multipleHudAvailable;
-    }
-
-    public static void disableMultipleHudBridge(String reason) {
-        if (!multipleHudAvailable) {
-            return;
-        }
-
-        multipleHudAvailable = false;
-        multipleHudInstance = null;
-        setCustomHudMethod = null;
-        hideCustomHudMethod = null;
-
-        EcoCoins.getInstance().getLogger().at(Level.WARNING).log(
-                "[EcoCoins] MultipleHUD bridge desactivado en runtime. Motivo: " + reason +
-                        ". Se usará HUD vanilla para evitar bucle de errores CustomUI."
-        );
     }
 
     public static void setCustomHud(Player player, PlayerRef playerRef, CustomUIHud hud) {
@@ -100,14 +72,10 @@ public final class HudHelper {
             try {
                 setCustomHudMethod.invoke(multipleHudInstance, player, playerRef, HUD_ID, hud);
                 return;
-            } catch (Throwable t) {
+            } catch (Exception e) {
                 EcoCoins.getInstance().getLogger().at(Level.WARNING).log(
-                        "[EcoCoins] Falló setCustomHud de MultipleHUD (" + t.getClass().getSimpleName() + "): " + t.getMessage()
+                        "[EcoCoins] MultipleHUD setCustomHud falló, fallback vanilla: " + e.getMessage()
                 );
-                // IMPORTANTE: no caer a vanilla si MultipleHUD está detectado pero falló,
-                // porque puede causar exactamente el conflicto de apply commands
-                // al competir con otros HUD custom ya envueltos por MultipleHUD.
-                return;
             }
         }
 
@@ -118,7 +86,7 @@ public final class HudHelper {
         if (multipleHudAvailable && multipleHudInstance != null && hideCustomHudMethod != null) {
             try {
                 hideCustomHudMethod.invoke(multipleHudInstance, player, playerRef, HUD_ID);
-            } catch (Throwable ignored) {
+            } catch (Exception ignored) {
                 // Best effort cleanup.
             }
         }

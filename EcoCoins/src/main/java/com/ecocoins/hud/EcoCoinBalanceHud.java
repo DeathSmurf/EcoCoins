@@ -16,11 +16,20 @@ public final class EcoCoinBalanceHud extends SimpleHud {
         super(playerRef, "Pages/EcoCoins_BalanceHud.ui");
     }
 
-    public void update(double balance) {
+    /**
+     * Solo actualiza estado de texto; no empuja comandos al cliente.
+     */
+    public void applyBalanceState(double balance) {
         String value = String.format("%.2f", balance);
         setText("CurrencyName", "EcoCoin");
         setText("BalanceSymbol", "$");
         setText("BalanceAmount", value);
+    }
+
+    /**
+     * Render completo del HUD (vanilla path).
+     */
+    public void render() {
         pushUpdates();
     }
 }

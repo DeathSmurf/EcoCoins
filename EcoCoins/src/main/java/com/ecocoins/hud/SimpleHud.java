@@ -1,6 +1,5 @@
 package com.ecocoins.hud;
 
-import com.ecocoins.util.HudHelper;
 import com.hypixel.hytale.server.core.entity.entities.player.hud.CustomUIHud;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
@@ -47,10 +46,6 @@ public abstract class SimpleHud extends CustomUIHud {
             this.show();
             return true;
         } catch (Exception e) {
-            String msg = e.getMessage();
-            if (msg != null && msg.contains("#MultipleHUD")) {
-                HudHelper.disableMultipleHudBridge("Selector interno no encontrado (#MultipleHUD) durante show()");
-            }
             LOGGER.log(Level.WARNING, "Failed to push HUD updates for path: " + uiPath + " - " + e.getMessage());
             return false;
         }
@@ -61,10 +56,6 @@ public abstract class SimpleHud extends CustomUIHud {
             this.update(false, builder);
             return true;
         } catch (Exception e) {
-            String msg = e.getMessage();
-            if (msg != null && msg.contains("#MultipleHUD")) {
-                HudHelper.disableMultipleHudBridge("Selector interno no encontrado (#MultipleHUD) durante update(false,...)");
-            }
             LOGGER.log(Level.WARNING, "Failed to send incremental HUD update for path: " + uiPath + " - " + e.getMessage());
             return false;
         }

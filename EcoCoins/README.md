@@ -118,23 +118,6 @@ EcoCoins ahora muestra un HUD de balance en la esquina inferior, siguiendo la re
 - `/changeon` → vuelve a mostrar el HUD de balance.
 
 
-### Solución al error `Failed to load CustomUI documents`
-
-- El HUD usa **un único `Group` raíz** (`#BalancePanel`) para máxima compatibilidad de parseo CustomUI.
-- Reestructuración estable tipo Ecotale: **un único documento HUD** (`EcoCoins_BalanceHud.ui`) con un único panel raíz y sin cambios estructurales en runtime.
-- Además, el HUD ya **no se re-registra** en cada cambio de balance; sólo se actualiza el texto para evitar conflictos de aplicación de comandos HUD.
-- Estrategia de actualización estable: `setText + show()` en el HUD fijo para minimizar conflictos de aplicación de comandos CustomUI.
-- `HUD_ID` para MultipleHUD se normalizó a `ecocoins` (sin guiones) y se añadieron logs de diagnóstico para confirmar detección de clase y fallos de reflexión en runtime.
-- Si MultipleHUD está detectado pero su `setCustomHud` falla por reflexión, EcoCoins **ya no cae a HUD vanilla** (evita conflicto doble de wrappers que dispara `Failed to apply CustomUI HUD commands`).
-- Si aparece `Selector: #MultipleHUD`, EcoCoins fuerza estrategia `setText + show()` cuando detecta MultipleHUD (sin deltas `update(false, ...)`) para evitar conflictos con selectores internos del wrapper.
-- Failsafe runtime: si aparece `Selector: #MultipleHUD`, EcoCoins desactiva el bridge de MultipleHUD para esa sesión y usa HUD vanilla para cortar el bucle de errores de apply commands.
-EcoCoins sigue el patrón funcional de Ecotale para CustomUI:
-- Fuente editable en `src/main/assetpack/Common/UI/Custom/Pages`.
-- Copia de build a `UI/Custom/Pages` (ruta esperada por `Pages/*.ui`).
-- Registro en `assets.json` del assetpack.
-
-Si vuelve a aparecer el error, verifica que el `.jar` desplegado incluya `Common/UI/Custom/Pages/EcoCoins_BalanceHud.ui` y que `assets.json` liste esa ruta (como en Ecotale).
-
 ### Compatibilidad con MultipleHUD
 
 EcoCoins usa el mod **MultipleHUD** cuando está instalado para permitir múltiples HUD en pantalla al mismo tiempo.
