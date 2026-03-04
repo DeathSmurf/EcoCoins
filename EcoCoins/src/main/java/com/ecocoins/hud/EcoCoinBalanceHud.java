@@ -1,5 +1,6 @@
 package com.ecocoins.hud;
 
+import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 
 public final class EcoCoinBalanceHud extends SimpleHud {
@@ -14,6 +15,7 @@ public final class EcoCoinBalanceHud extends SimpleHud {
     }
 
     private final Position position;
+    private boolean mounted = false;
 
     public EcoCoinBalanceHud(PlayerRef playerRef, Position position) {
         super(playerRef, uiPathFor(position));
@@ -26,11 +28,23 @@ public final class EcoCoinBalanceHud extends SimpleHud {
 
     public void update(double balance) {
         String value = String.format("%.2f", balance);
-        setText("BalanceAmount", value);
 
-        // Estrategia Ecotale-like: full show() en cada actualización de HUD
-        // (sin update incremental), para evitar conflictos de aplicación de comandos.
-        pushUpdates();
+        // 1) Primer montaje: show() completo del documento.
+        if (!mounted) {
+            setText("BalanceAmount", value);
+            mounted = pushUpdates();
+            return;
+        }
+
+        // 2) Actualizaciones normales: delta incremental (más estable con MultipleHUD).
+        UICommandBuilder builder = createBuilder();
+        builder.set("#BalanceAmount.Text", value);
+
+        boolean ok = sendUpdate(builder);
+        if (!ok) {
+            // Si el delta falla, reintentar con montaje completo en el siguiente update.
+            mounted = false;
+        }
     }
 
     private static String uiPathFor(Position position) {
