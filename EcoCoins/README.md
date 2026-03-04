@@ -75,6 +75,12 @@ Si quieres replicar el patrón de `Interaction Secondary: Type: Simple`, revisa:
   Permite usar `/change` para ver monedas y `pay`.
 - `ecocoins.command.changeall.use`  
   Permite usar `/changeall` para canjear todas las monedas físicas del inventario.
+- `ecocoins.command.changeposition.use`
+  Permite usar `/changeposition` (actualmente sin alternancia; modo estable con HUD fijo).
+- `ecocoins.command.changeoff.use`
+  Permite usar `/changeoff` para ocultar el HUD.
+- `ecocoins.command.changeon.use`
+  Permite usar `/changeon` para volver a mostrar el HUD.
 
 ## Comandos disponibles
 
@@ -99,3 +105,44 @@ Pasos para dejarlo funcionando en tu servidor:
 1. Copia tu `Redeem.ogg` en `ExportedAssetPack/Common/Sounds/EcoCoins/Redeem.ogg`.
 2. Verifica que exista `ExportedAssetPack/Server/Audio/SoundEvents/SFX_EcoCoins_Redeem.json`.
 3. Reinicia el servidor.
+
+
+## UI de balance (HUD)
+
+EcoCoins ahora muestra un HUD de balance en la esquina inferior, siguiendo la referencia visual de Ecotale.
+
+### Comandos de HUD
+
+- `/changeposition` → desactivado por estabilidad (HUD fijo inferior derecha con estructura Ecotale).
+- `/changeoff` → oculta el HUD de balance.
+- `/changeon` → vuelve a mostrar el HUD de balance.
+
+
+### Solución al error `Failed to load CustomUI documents`
+
+- El HUD usa **un único `Group` raíz** (`#BalancePanel`) para máxima compatibilidad de parseo CustomUI.
+- Reestructuración estable tipo Ecotale: **un único documento HUD** (`EcoCoins_BalanceHud.ui`) con un único panel raíz y sin cambios estructurales en runtime.
+- Además, el HUD ya **no se re-registra** en cada cambio de balance; sólo se actualiza el texto para evitar conflictos de aplicación de comandos HUD.
+- Estrategia de actualización estable: `setText + show()` en el HUD fijo para minimizar conflictos de aplicación de comandos CustomUI.
+- `HUD_ID` para MultipleHUD se normalizó a `ecocoins` (sin guiones) y se añadieron logs de diagnóstico para confirmar detección de clase y fallos de reflexión en runtime.
+- Si MultipleHUD está detectado pero su `setCustomHud` falla por reflexión, EcoCoins **ya no cae a HUD vanilla** (evita conflicto doble de wrappers que dispara `Failed to apply CustomUI HUD commands`).
+- Si aparece `Selector: #MultipleHUD`, EcoCoins fuerza estrategia `setText + show()` cuando detecta MultipleHUD (sin deltas `update(false, ...)`) para evitar conflictos con selectores internos del wrapper.
+- Failsafe runtime: si aparece `Selector: #MultipleHUD`, EcoCoins desactiva el bridge de MultipleHUD para esa sesión y usa HUD vanilla para cortar el bucle de errores de apply commands.
+EcoCoins sigue el patrón funcional de Ecotale para CustomUI:
+- Fuente editable en `src/main/assetpack/Common/UI/Custom/Pages`.
+- Copia de build a `UI/Custom/Pages` (ruta esperada por `Pages/*.ui`).
+- Registro en `assets.json` del assetpack.
+
+Si vuelve a aparecer el error, verifica que el `.jar` desplegado incluya `Common/UI/Custom/Pages/EcoCoins_BalanceHud.ui` y que `assets.json` liste esa ruta (como en Ecotale).
+
+### Compatibilidad con MultipleHUD
+
+EcoCoins usa el mod **MultipleHUD** cuando está instalado para permitir múltiples HUD en pantalla al mismo tiempo.
+Si no está presente, EcoCoins usa el HUD vanilla (un solo HUD custom).
+
+Referencia de uso publicada por MultipleHUD:
+
+`MultipleHUD.getInstance().setCustomHud(player, playerRef, "Hud1", new TestUIHUD());`
+`MultipleHUD.getInstance().setCustomHud(player, playerRef, "Hud2", new TestUIHUD());`
+
+Maven: https://maven.hytale-mods.dev/
