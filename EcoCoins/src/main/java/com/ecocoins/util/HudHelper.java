@@ -79,6 +79,22 @@ public final class HudHelper {
         return multipleHudAvailable;
     }
 
+    public static void disableMultipleHudBridge(String reason) {
+        if (!multipleHudAvailable) {
+            return;
+        }
+
+        multipleHudAvailable = false;
+        multipleHudInstance = null;
+        setCustomHudMethod = null;
+        hideCustomHudMethod = null;
+
+        EcoCoins.getInstance().getLogger().at(Level.WARNING).log(
+                "[EcoCoins] MultipleHUD bridge desactivado en runtime. Motivo: " + reason +
+                        ". Se usará HUD vanilla para evitar bucle de errores CustomUI."
+        );
+    }
+
     public static void setCustomHud(Player player, PlayerRef playerRef, CustomUIHud hud) {
         if (multipleHudAvailable && multipleHudInstance != null && setCustomHudMethod != null) {
             try {

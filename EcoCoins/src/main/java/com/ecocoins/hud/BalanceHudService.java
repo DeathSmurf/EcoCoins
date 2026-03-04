@@ -13,7 +13,7 @@ public final class BalanceHudService {
 
     private final TheEconomyService economyService;
     private final ConcurrentHashMap<UUID, EcoCoinBalanceHud> huds = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<UUID, HudSettings> settings = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Boolean> enabled = new ConcurrentHashMap<>();
 
     public BalanceHudService(TheEconomyService economyService) {
         this.economyService = economyService;
@@ -24,41 +24,29 @@ public final class BalanceHudService {
             return;
         }
 
-        HudSettings cfg = settings.computeIfAbsent(playerRef.getUuid(), ignored -> HudSettings.defaults());
-        if (!cfg.enabled()) {
+        boolean hudEnabled = enabled.computeIfAbsent(playerRef.getUuid(), ignored -> true);
+        if (!hudEnabled) {
             return;
         }
 
-        EcoCoinBalanceHud hud = getOrCreateHud(playerRef, cfg.position());
+        EcoCoinBalanceHud hud = huds.computeIfAbsent(playerRef.getUuid(), ignored -> new EcoCoinBalanceHud(playerRef));
         HudHelper.setCustomHud(player, playerRef, hud);
         hud.update(economyService.getBalance(playerRef.getUuid()));
     }
 
     public void hide(Player player, PlayerRef playerRef) {
-        HudSettings cfg = settings.computeIfAbsent(playerRef.getUuid(), ignored -> HudSettings.defaults());
-        settings.put(playerRef.getUuid(), cfg.withEnabled(false));
+        enabled.put(playerRef.getUuid(), false);
         HudHelper.hideCustomHud(player, playerRef);
     }
 
     public void show(Player player, PlayerRef playerRef) {
-        HudSettings cfg = settings.computeIfAbsent(playerRef.getUuid(), ignored -> HudSettings.defaults());
-        settings.put(playerRef.getUuid(), cfg.withEnabled(true));
+        enabled.put(playerRef.getUuid(), true);
         showOnJoin(player, playerRef);
     }
 
     public EcoCoinBalanceHud.Position togglePosition(Player player, PlayerRef playerRef) {
-        HudSettings cfg = settings.computeIfAbsent(playerRef.getUuid(), ignored -> HudSettings.defaults());
-        EcoCoinBalanceHud.Position newPosition = cfg.position().toggle();
-        settings.put(playerRef.getUuid(), cfg.withPosition(newPosition));
-
-        // Forzar rebuild de HUD con nuevo documento .ui
-        huds.remove(playerRef.getUuid());
-
-        if (cfg.enabled()) {
-            showOnJoin(player, playerRef);
-        }
-
-        return newPosition;
+        player.sendMessage(Message.raw("[EcoCoins] /changeposition está desactivado por estabilidad. HUD fijo en esquina inferior derecha (estilo Ecotale)."));
+        return EcoCoinBalanceHud.Position.BOTTOM_RIGHT;
     }
 
     public void updateBalance(Player player, PlayerRef playerRef) {
@@ -66,18 +54,12 @@ public final class BalanceHudService {
             return;
         }
 
-        HudSettings cfg = settings.computeIfAbsent(playerRef.getUuid(), ignored -> HudSettings.defaults());
-        if (!cfg.enabled()) {
+        boolean hudEnabled = enabled.computeIfAbsent(playerRef.getUuid(), ignored -> true);
+        if (!hudEnabled) {
             return;
         }
 
-        EcoCoinBalanceHud hud = getOrCreateHud(playerRef, cfg.position());
-
-        // IMPORTANTE:
-        // No re-registrar setCustomHud en cada actualización de balance.
-        // Reaplicar el HUD wrapper repetidamente puede generar conflictos de comandos
-        // (ej: "Failed to apply CustomUI HUD commands") en algunos runtimes.
-        // El HUD se registra en join/show/togglePosition y aquí solo se actualiza texto.
+        EcoCoinBalanceHud hud = huds.computeIfAbsent(playerRef.getUuid(), ignored -> new EcoCoinBalanceHud(playerRef));
         hud.update(economyService.getBalance(playerRef.getUuid()));
     }
 
@@ -86,37 +68,10 @@ public final class BalanceHudService {
             return;
         }
         huds.remove(playerRef.getUuid());
-        settings.remove(playerRef.getUuid());
+        enabled.remove(playerRef.getUuid());
     }
 
     public void sendPositionMessage(Player player, EcoCoinBalanceHud.Position position) {
-        if (position == EcoCoinBalanceHud.Position.BOTTOM_LEFT) {
-            player.sendMessage(Message.raw("[EcoCoins] HUD movido a esquina inferior izquierda."));
-        } else {
-            player.sendMessage(Message.raw("[EcoCoins] HUD movido a esquina inferior derecha."));
-        }
-    }
-
-    private EcoCoinBalanceHud getOrCreateHud(PlayerRef playerRef, EcoCoinBalanceHud.Position position) {
-        return huds.compute(playerRef.getUuid(), (uuid, existing) -> {
-            if (existing == null || existing.getPosition() != position) {
-                return new EcoCoinBalanceHud(playerRef, position);
-            }
-            return existing;
-        });
-    }
-
-    private record HudSettings(boolean enabled, EcoCoinBalanceHud.Position position) {
-        static HudSettings defaults() {
-            return new HudSettings(true, EcoCoinBalanceHud.Position.BOTTOM_RIGHT);
-        }
-
-        HudSettings withEnabled(boolean value) {
-            return new HudSettings(value, this.position);
-        }
-
-        HudSettings withPosition(EcoCoinBalanceHud.Position value) {
-            return new HudSettings(this.enabled, value);
-        }
+        player.sendMessage(Message.raw("[EcoCoins] HUD fijo en esquina inferior derecha (estructura Ecotale estable)."));
     }
 }

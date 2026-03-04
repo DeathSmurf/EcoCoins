@@ -19,7 +19,7 @@ public final class ChangePositionCommand extends AbstractPlayerCommand {
     private final BalanceHudService hudService;
 
     public ChangePositionCommand(BalanceHudService hudService) {
-        super("changeposition", "Alterna la posición del HUD entre esquina inferior izquierda y derecha.", false);
+        super("changeposition", "Comando legado: posición fija por estabilidad del HUD.", false);
         this.hudService = hudService;
         this.requirePermission(PERM_CHANGEPOSITION_USE);
     }

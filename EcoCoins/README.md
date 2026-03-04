@@ -76,7 +76,7 @@ Si quieres replicar el patrón de `Interaction Secondary: Type: Simple`, revisa:
 - `ecocoins.command.changeall.use`  
   Permite usar `/changeall` para canjear todas las monedas físicas del inventario.
 - `ecocoins.command.changeposition.use`
-  Permite usar `/changeposition` para alternar la esquina del HUD.
+  Permite usar `/changeposition` (actualmente sin alternancia; modo estable con HUD fijo).
 - `ecocoins.command.changeoff.use`
   Permite usar `/changeoff` para ocultar el HUD.
 - `ecocoins.command.changeon.use`
@@ -113,7 +113,7 @@ EcoCoins ahora muestra un HUD de balance en la esquina inferior, siguiendo la re
 
 ### Comandos de HUD
 
-- `/changeposition` → alterna entre esquina inferior derecha e inferior izquierda.
+- `/changeposition` → desactivado por estabilidad (HUD fijo inferior derecha con estructura Ecotale).
 - `/changeoff` → oculta el HUD de balance.
 - `/changeon` → vuelve a mostrar el HUD de balance.
 
@@ -121,12 +121,13 @@ EcoCoins ahora muestra un HUD de balance en la esquina inferior, siguiendo la re
 ### Solución al error `Failed to load CustomUI documents`
 
 - El HUD usa **un único `Group` raíz** (`#BalancePanel`) para máxima compatibilidad de parseo CustomUI.
-- Para evitar `Failed to apply CustomUI HUD commands`, la posición ya no usa cambios complejos de `Anchor` en runtime: se usan **2 documentos UI simples** (`..._Left.ui` / `..._Right.ui`) y se reconstruye el HUD al alternar posición.
+- Reestructuración estable tipo Ecotale: **un único documento HUD** (`EcoCoins_BalanceHud.ui`) con un único panel raíz y sin cambios estructurales en runtime.
 - Además, el HUD ya **no se re-registra** en cada cambio de balance; sólo se actualiza el texto para evitar conflictos de aplicación de comandos HUD.
-- Estrategia estable recomendada: `show()` solo para montaje inicial del HUD y luego **updates incrementales de texto** (`update(false, ...)`) para balance; si falla el delta, se fuerza remount automático.
+- Estrategia de actualización estable: `setText + show()` en el HUD fijo para minimizar conflictos de aplicación de comandos CustomUI.
 - `HUD_ID` para MultipleHUD se normalizó a `ecocoins` (sin guiones) y se añadieron logs de diagnóstico para confirmar detección de clase y fallos de reflexión en runtime.
 - Si MultipleHUD está detectado pero su `setCustomHud` falla por reflexión, EcoCoins **ya no cae a HUD vanilla** (evita conflicto doble de wrappers que dispara `Failed to apply CustomUI HUD commands`).
 - Si aparece `Selector: #MultipleHUD`, EcoCoins fuerza estrategia `setText + show()` cuando detecta MultipleHUD (sin deltas `update(false, ...)`) para evitar conflictos con selectores internos del wrapper.
+- Failsafe runtime: si aparece `Selector: #MultipleHUD`, EcoCoins desactiva el bridge de MultipleHUD para esa sesión y usa HUD vanilla para cortar el bucle de errores de apply commands.
 EcoCoins sigue el patrón funcional de Ecotale para CustomUI:
 - Fuente editable en `src/main/assetpack/Common/UI/Custom/Pages`.
 - Copia de build a `UI/Custom/Pages` (ruta esperada por `Pages/*.ui`).
