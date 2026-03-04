@@ -73,6 +73,7 @@ public final class HudHelper {
                 setCustomHudMethod.invoke(multipleHudInstance, player, playerRef, HUD_ID, hud);
                 return;
             } catch (Exception e) {
+                multipleHudAvailable = false;
                 EcoCoins.getInstance().getLogger().at(Level.WARNING).log(
                         "[EcoCoins] MultipleHUD setCustomHud falló, usando HUD vanilla: " + e.getMessage()
                 );
