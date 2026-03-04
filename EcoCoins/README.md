@@ -120,6 +120,7 @@ EcoCoins ahora muestra un HUD de balance en la esquina inferior, siguiendo la re
 
 ### Solución al error `Failed to load CustomUI documents`
 
+- El HUD usa **un único `Group` raíz** (`#BalancePanel`) para máxima compatibilidad de parseo CustomUI.
 EcoCoins sigue el patrón funcional de Ecotale para CustomUI:
 - Fuente editable en `src/main/assetpack/Common/UI/Custom/Pages`.
 - Copia de build a `UI/Custom/Pages` (ruta esperada por `Pages/*.ui`).
