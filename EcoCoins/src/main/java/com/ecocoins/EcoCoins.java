@@ -68,6 +68,7 @@ public final class EcoCoins extends JavaPlugin {
 
             HudHelper.init();
             registerCoinInteractionType();
+            validateHudResources();
 
             try {
                 languageManager.loadAll();
@@ -117,6 +118,18 @@ public final class EcoCoins extends JavaPlugin {
     @Override
     protected void shutdown() {
         getLogger().at(Level.INFO).log("[EcoCoins] shutdown()");
+    }
+
+    private void validateHudResources() {
+        ClassLoader cl = EcoCoins.class.getClassLoader();
+        boolean commonPath = cl.getResource("Common/UI/Custom/Pages/EcoCoins_BalanceHud.ui") != null;
+        boolean uiPath = cl.getResource("UI/Custom/Pages/EcoCoins_BalanceHud.ui") != null;
+
+        if (commonPath || uiPath) {
+            getLogger().at(Level.INFO).log("[EcoCoins] HUD UI detectada en classpath. commonPath=" + commonPath + " uiPath=" + uiPath);
+        } else {
+            getLogger().at(Level.WARNING).log("[EcoCoins] HUD UI NO encontrada en classpath. Revisa assets.json y empaquetado de resources.");
+        }
     }
 
     private void registerCoinInteractionType() {

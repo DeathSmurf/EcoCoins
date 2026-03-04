@@ -125,7 +125,7 @@ EcoCoins sigue el patrón funcional de Ecotale para CustomUI:
 - Copia de build a `UI/Custom/Pages` (ruta esperada por `Pages/*.ui`).
 - Registro en `assets.json` del assetpack.
 
-Si vuelve a aparecer el error, verifica que el `.jar` desplegado incluya `UI/Custom/Pages/EcoCoins_BalanceHud.ui`.
+Si vuelve a aparecer el error, verifica que el `.jar` desplegado incluya `Common/UI/Custom/Pages/EcoCoins_BalanceHud.ui` y que `assets.json` liste esa ruta (como en Ecotale).
 
 ### Compatibilidad con MultipleHUD
 

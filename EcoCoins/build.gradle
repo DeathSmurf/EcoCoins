@@ -64,7 +64,7 @@ tasks.register('generateAssetsJson') {
             uiDir.eachFileRecurse { f ->
                 if (f.isFile() && f.name.endsWith('.ui')) {
                     def rel = uiDir.toPath().relativize(f.toPath()).toString().replace('\\', '/')
-                    entries.add("UI/Custom/Pages/" + rel)
+                    entries.add("Common/UI/Custom/Pages/" + rel)
                 }
             }
         }
