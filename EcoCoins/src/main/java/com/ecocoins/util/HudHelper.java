@@ -15,6 +15,8 @@ public final class HudHelper {
     private static final String HUD_ID = "ecocoins";
     private static final List<String> MULTIPLEHUD_CLASS_NAMES = List.of(
             "com.buuz135.mhud.MultipleHUD",
+            "com.multiplehud.MultipleHUD",
+            "dev.multiplehud.MultipleHUD",
             "MultipleHUD"
     );
 
@@ -73,6 +75,10 @@ public final class HudHelper {
         );
     }
 
+    public static boolean isMultipleHudAvailable() {
+        return multipleHudAvailable;
+    }
+
     public static void setCustomHud(Player player, PlayerRef playerRef, CustomUIHud hud) {
         if (multipleHudAvailable && multipleHudInstance != null && setCustomHudMethod != null) {
             try {
@@ -82,6 +88,10 @@ public final class HudHelper {
                 EcoCoins.getInstance().getLogger().at(Level.WARNING).log(
                         "[EcoCoins] Falló setCustomHud de MultipleHUD (" + t.getClass().getSimpleName() + "): " + t.getMessage()
                 );
+                // IMPORTANTE: no caer a vanilla si MultipleHUD está detectado pero falló,
+                // porque puede causar exactamente el conflicto de apply commands
+                // al competir con otros HUD custom ya envueltos por MultipleHUD.
+                return;
             }
         }
 
