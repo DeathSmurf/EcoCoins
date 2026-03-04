@@ -30,18 +30,19 @@ public final class EcoCoinBalanceHud extends SimpleHud {
         String value = String.format("%.2f", balance);
 
         if (!initialized) {
-            // Primer render: append del documento + estado inicial
             setText("BalanceAmount", value);
-            pushUpdates();
-            initialized = true;
+            initialized = pushUpdates();
             return;
         }
 
-        // Actualizaciones siguientes: enviar sólo delta de texto para reducir
-        // conflictos de comandos HUD en runtime.
         UICommandBuilder builder = createBuilder();
         builder.set("#BalanceAmount.Text", value);
-        sendUpdate(builder);
+
+        boolean updated = sendUpdate(builder);
+        if (!updated) {
+            // Si el delta falla, forzar rebuild completo en siguiente update.
+            initialized = false;
+        }
     }
 
     private static String uiPathFor(Position position) {

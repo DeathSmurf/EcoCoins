@@ -41,19 +41,23 @@ public abstract class SimpleHud extends CustomUIHud {
         return this;
     }
 
-    public void pushUpdates() {
+    public boolean pushUpdates() {
         try {
             this.show();
+            return true;
         } catch (Exception e) {
             LOGGER.log(Level.WARNING, "Failed to push HUD updates for path: " + uiPath + " - " + e.getMessage());
+            return false;
         }
     }
 
-    public void sendUpdate(@Nonnull UICommandBuilder builder) {
+    public boolean sendUpdate(@Nonnull UICommandBuilder builder) {
         try {
             this.update(false, builder);
+            return true;
         } catch (Exception e) {
             LOGGER.log(Level.WARNING, "Failed to send incremental HUD update for path: " + uiPath + " - " + e.getMessage());
+            return false;
         }
     }
 
