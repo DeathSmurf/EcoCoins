@@ -1,5 +1,6 @@
 package com.ecocoins.hud;
 
+import com.ecocoins.util.HudHelper;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 
@@ -29,6 +30,15 @@ public final class EcoCoinBalanceHud extends SimpleHud {
     public void update(double balance) {
         String value = String.format("%.2f", balance);
 
+        // En MultipleHUD evitamos deltas incrementales, porque algunos wrappers
+        // internos aplican selectores propios (ej. #MultipleHUD) y pueden entrar
+        // en conflicto con update(false, ...).
+        if (HudHelper.isMultipleHudAvailable()) {
+            setText("BalanceAmount", value);
+            mounted = pushUpdates();
+            return;
+        }
+
         // 1) Primer montaje: show() completo del documento.
         if (!mounted) {
             setText("BalanceAmount", value);
@@ -36,7 +46,7 @@ public final class EcoCoinBalanceHud extends SimpleHud {
             return;
         }
 
-        // 2) Actualizaciones normales: delta incremental (más estable con MultipleHUD).
+        // 2) En vanilla, usar delta incremental para reducir churn.
         UICommandBuilder builder = createBuilder();
         builder.set("#BalanceAmount.Text", value);
 

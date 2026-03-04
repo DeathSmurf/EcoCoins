@@ -126,6 +126,7 @@ EcoCoins ahora muestra un HUD de balance en la esquina inferior, siguiendo la re
 - Estrategia estable recomendada: `show()` solo para montaje inicial del HUD y luego **updates incrementales de texto** (`update(false, ...)`) para balance; si falla el delta, se fuerza remount automático.
 - `HUD_ID` para MultipleHUD se normalizó a `ecocoins` (sin guiones) y se añadieron logs de diagnóstico para confirmar detección de clase y fallos de reflexión en runtime.
 - Si MultipleHUD está detectado pero su `setCustomHud` falla por reflexión, EcoCoins **ya no cae a HUD vanilla** (evita conflicto doble de wrappers que dispara `Failed to apply CustomUI HUD commands`).
+- Si aparece `Selector: #MultipleHUD`, EcoCoins fuerza estrategia `setText + show()` cuando detecta MultipleHUD (sin deltas `update(false, ...)`) para evitar conflictos con selectores internos del wrapper.
 EcoCoins sigue el patrón funcional de Ecotale para CustomUI:
 - Fuente editable en `src/main/assetpack/Common/UI/Custom/Pages`.
 - Copia de build a `UI/Custom/Pages` (ruta esperada por `Pages/*.ui`).
