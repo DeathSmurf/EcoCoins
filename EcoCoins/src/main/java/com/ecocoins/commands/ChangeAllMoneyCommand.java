@@ -4,6 +4,7 @@ import com.ecocoins.core.CoinManager;
 import com.ecocoins.core.InventoryUtil;
 import com.ecocoins.core.LanguageManager;
 import com.ecocoins.core.TheEconomyService;
+import com.ecocoins.hud.BalanceHudService;
 import com.ecocoins.model.CoinDefinition;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
@@ -31,12 +32,14 @@ public final class ChangeAllMoneyCommand extends AbstractPlayerCommand {
     private final LanguageManager lang;
     private final CoinManager coins;
     private final TheEconomyService economy;
+    private final BalanceHudService hudService;
 
-    public ChangeAllMoneyCommand(LanguageManager lang, CoinManager coins, TheEconomyService economy) {
+    public ChangeAllMoneyCommand(LanguageManager lang, CoinManager coins, TheEconomyService economy, BalanceHudService hudService) {
         super("changeall", "Convierte todas tus monedas físicas EcoCoins a dinero virtual.", false);
         this.lang = lang;
         this.coins = coins;
         this.economy = economy;
+        this.hudService = hudService;
 
         this.requirePermission(PERM_CHANGEALL_USE);
     }
@@ -110,6 +113,8 @@ public final class ChangeAllMoneyCommand extends AbstractPlayerCommand {
                 "coins", totalCoins,
                 "pay", totalPay
         )));
+
+        hudService.updateBalance(player, playerRef);
     }
 
 

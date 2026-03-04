@@ -75,6 +75,12 @@ Si quieres replicar el patrón de `Interaction Secondary: Type: Simple`, revisa:
   Permite usar `/change` para ver monedas y `pay`.
 - `ecocoins.command.changeall.use`  
   Permite usar `/changeall` para canjear todas las monedas físicas del inventario.
+- `ecocoins.command.changeposition.use`
+  Permite usar `/changeposition` para alternar la esquina del HUD.
+- `ecocoins.command.changeoff.use`
+  Permite usar `/changeoff` para ocultar el HUD.
+- `ecocoins.command.changeon.use`
+  Permite usar `/changeon` para volver a mostrar el HUD.
 
 ## Comandos disponibles
 
@@ -99,3 +105,41 @@ Pasos para dejarlo funcionando en tu servidor:
 1. Copia tu `Redeem.ogg` en `ExportedAssetPack/Common/Sounds/EcoCoins/Redeem.ogg`.
 2. Verifica que exista `ExportedAssetPack/Server/Audio/SoundEvents/SFX_EcoCoins_Redeem.json`.
 3. Reinicia el servidor.
+
+
+## UI de balance (HUD)
+
+EcoCoins ahora muestra un HUD de balance en la esquina inferior, siguiendo la referencia visual de Ecotale.
+
+### Comandos de HUD
+
+- `/changeposition` → alterna entre esquina inferior derecha e inferior izquierda.
+- `/changeoff` → oculta el HUD de balance.
+- `/changeon` → vuelve a mostrar el HUD de balance.
+
+
+### Solución al error `Failed to load CustomUI documents`
+
+- El HUD usa **un único `Group` raíz** (`#BalancePanel`) para máxima compatibilidad de parseo CustomUI.
+- Para evitar `Failed to apply CustomUI HUD commands`, la posición ya no usa cambios complejos de `Anchor` en runtime: se usan **2 documentos UI simples** (`..._Left.ui` / `..._Right.ui`) y se reconstruye el HUD al alternar posición.
+- Además, el HUD ya **no se re-registra** en cada cambio de balance; sólo se actualiza el texto para evitar conflictos de aplicación de comandos HUD.
+- Las actualizaciones de balance usan **updates incrementales de texto** (sin re-append completo del documento UI) para minimizar errores al aplicar comandos CustomUI.
+- Se corrigió una causa lógica crítica: el HUD ahora sólo se marca como inicializado si `show()` realmente funciona; si falla un update incremental, se fuerza rebuild completo en el siguiente intento.
+EcoCoins sigue el patrón funcional de Ecotale para CustomUI:
+- Fuente editable en `src/main/assetpack/Common/UI/Custom/Pages`.
+- Copia de build a `UI/Custom/Pages` (ruta esperada por `Pages/*.ui`).
+- Registro en `assets.json` del assetpack.
+
+Si vuelve a aparecer el error, verifica que el `.jar` desplegado incluya `Common/UI/Custom/Pages/EcoCoins_BalanceHud.ui` y que `assets.json` liste esa ruta (como en Ecotale).
+
+### Compatibilidad con MultipleHUD
+
+EcoCoins usa el mod **MultipleHUD** cuando está instalado para permitir múltiples HUD en pantalla al mismo tiempo.
+Si no está presente, EcoCoins usa el HUD vanilla (un solo HUD custom).
+
+Referencia de uso publicada por MultipleHUD:
+
+`MultipleHUD.getInstance().setCustomHud(player, playerRef, "Hud1", new TestUIHUD());`
+`MultipleHUD.getInstance().setCustomHud(player, playerRef, "Hud2", new TestUIHUD());`
+
+Maven: https://maven.hytale-mods.dev/
