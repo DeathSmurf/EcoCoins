@@ -35,6 +35,47 @@ tasks.withType(JavaCompile).configureEach {
     options.release.set(21)
 }
 
+processResources {
+    // Referencia Ecotale: mantener UI editable en Common/UI/Custom/Pages
+    // y copiarla al path runtime que resuelve Pages/*.ui => UI/Custom/Pages/*.ui
+    from('src/main/assetpack/Common/UI/Custom/Pages') {
+        into 'UI/Custom/Pages'
+    }
+}
+
+tasks.register('generateAssetsJson') {
+    doLast {
+        def resourceDir = file('src/main/assetpack')
+        def outputFile = file('src/main/assetpack/assets.json')
+        def entries = []
+
+        def assetsDir = new File(resourceDir, 'assets')
+        if (assetsDir.exists()) {
+            assetsDir.eachFileRecurse { f ->
+                if (f.isFile()) {
+                    def rel = assetsDir.toPath().relativize(f.toPath()).toString().replace('\\', '/')
+                    entries.add("assets/" + rel)
+                }
+            }
+        }
+
+        def uiDir = new File(resourceDir, 'Common/UI/Custom/Pages')
+        if (uiDir.exists()) {
+            uiDir.eachFileRecurse { f ->
+                if (f.isFile() && f.name.endsWith('.ui')) {
+                    def rel = uiDir.toPath().relativize(f.toPath()).toString().replace('\\', '/')
+                    entries.add("Common/UI/Custom/Pages/" + rel)
+                }
+            }
+        }
+
+        def unique = entries.unique().sort()
+        outputFile.text = "[\n" + unique.collect { "  \"${it}\"" }.join(",\n") + "\n]\n"
+    }
+}
+
+processResources.dependsOn(tasks.named('generateAssetsJson'))
+
 jar {
     archiveBaseName.set("EcoCoins")
 

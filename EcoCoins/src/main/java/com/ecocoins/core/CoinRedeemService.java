@@ -1,6 +1,7 @@
 package com.ecocoins.core;
 
 import com.ecocoins.model.CoinDefinition;
+import com.ecocoins.hud.BalanceHudService;
 import com.hypixel.hytale.protocol.InteractionType;
 import com.hypixel.hytale.protocol.SoundCategory;
 import com.hypixel.hytale.server.core.Message;
@@ -23,13 +24,15 @@ public final class CoinRedeemService {
     private final CoinManager coinManager;
     private final TheEconomyService economy;
     private final LanguageManager languageManager;
+    private final BalanceHudService hudService;
     private final boolean debugLogs;
 
-    public CoinRedeemService(HytaleLogger logger, CoinManager coinManager, TheEconomyService economy, LanguageManager languageManager, boolean debugLogs) {
+    public CoinRedeemService(HytaleLogger logger, CoinManager coinManager, TheEconomyService economy, LanguageManager languageManager, BalanceHudService hudService, boolean debugLogs) {
         this.logger = logger;
         this.coinManager = coinManager;
         this.economy = economy;
         this.languageManager = languageManager;
+        this.hudService = hudService;
         this.debugLogs = debugLogs;
     }
 
@@ -108,6 +111,7 @@ public final class CoinRedeemService {
         playRedeemSound(player);
         debug("ok: canjeado itemId=" + itemId + " pay=" + coin.pay + " uuid=" + uuid + " (source=" + source + ")");
         player.sendMessage(tr(player, "redeem.success", java.util.Map.of("pay", coin.pay)));
+        hudService.updateBalance(player, player.getPlayerRef());
         return true;
     }
 
