@@ -72,8 +72,13 @@ public final class BalanceHudService {
         }
 
         EcoCoinBalanceHud hud = getOrCreateHud(playerRef, cfg.position());
+
+        // IMPORTANTE:
+        // No re-registrar setCustomHud en cada actualización de balance.
+        // Reaplicar el HUD wrapper repetidamente puede generar conflictos de comandos
+        // (ej: "Failed to apply CustomUI HUD commands") en algunos runtimes.
+        // El HUD se registra en join/show/togglePosition y aquí solo se actualiza texto.
         hud.update(economyService.getBalance(playerRef.getUuid()));
-        HudHelper.setCustomHud(player, playerRef, hud);
     }
 
     public void onDisconnect(PlayerRef playerRef) {
