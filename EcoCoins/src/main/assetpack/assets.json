@@ -1,3 +1,5 @@
 [
-  "Common/UI/Custom/Pages/EcoCoins_BalanceHud.ui"
+  "Common/UI/Custom/Pages/EcoCoins_BalanceHud.ui",
+  "Common/UI/Custom/Pages/EcoCoins_BalanceHud_Left.ui",
+  "Common/UI/Custom/Pages/EcoCoins_BalanceHud_Right.ui"
 ]

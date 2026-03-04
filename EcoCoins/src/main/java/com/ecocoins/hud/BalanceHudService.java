@@ -29,9 +29,9 @@ public final class BalanceHudService {
             return;
         }
 
-        EcoCoinBalanceHud hud = huds.computeIfAbsent(playerRef.getUuid(), ignored -> new EcoCoinBalanceHud(playerRef));
+        EcoCoinBalanceHud hud = getOrCreateHud(playerRef, cfg.position());
         HudHelper.setCustomHud(player, playerRef, hud);
-        hud.update(economyService.getBalance(playerRef.getUuid()), cfg.position());
+        hud.update(economyService.getBalance(playerRef.getUuid()));
     }
 
     public void hide(Player player, PlayerRef playerRef) {
@@ -51,6 +51,9 @@ public final class BalanceHudService {
         EcoCoinBalanceHud.Position newPosition = cfg.position().toggle();
         settings.put(playerRef.getUuid(), cfg.withPosition(newPosition));
 
+        // Forzar rebuild de HUD con nuevo documento .ui
+        huds.remove(playerRef.getUuid());
+
         if (cfg.enabled()) {
             showOnJoin(player, playerRef);
         }
@@ -68,8 +71,8 @@ public final class BalanceHudService {
             return;
         }
 
-        EcoCoinBalanceHud hud = huds.computeIfAbsent(playerRef.getUuid(), ignored -> new EcoCoinBalanceHud(playerRef));
-        hud.update(economyService.getBalance(playerRef.getUuid()), cfg.position());
+        EcoCoinBalanceHud hud = getOrCreateHud(playerRef, cfg.position());
+        hud.update(economyService.getBalance(playerRef.getUuid()));
         HudHelper.setCustomHud(player, playerRef, hud);
     }
 
@@ -87,6 +90,15 @@ public final class BalanceHudService {
         } else {
             player.sendMessage(Message.raw("[EcoCoins] HUD movido a esquina inferior derecha."));
         }
+    }
+
+    private EcoCoinBalanceHud getOrCreateHud(PlayerRef playerRef, EcoCoinBalanceHud.Position position) {
+        return huds.compute(playerRef.getUuid(), (uuid, existing) -> {
+            if (existing == null || existing.getPosition() != position) {
+                return new EcoCoinBalanceHud(playerRef, position);
+            }
+            return existing;
+        });
     }
 
     private record HudSettings(boolean enabled, EcoCoinBalanceHud.Position position) {

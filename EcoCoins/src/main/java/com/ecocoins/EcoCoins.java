@@ -122,13 +122,19 @@ public final class EcoCoins extends JavaPlugin {
 
     private void validateHudResources() {
         ClassLoader cl = EcoCoins.class.getClassLoader();
-        boolean commonPath = cl.getResource("Common/UI/Custom/Pages/EcoCoins_BalanceHud.ui") != null;
-        boolean uiPath = cl.getResource("UI/Custom/Pages/EcoCoins_BalanceHud.ui") != null;
+        boolean commonDefault = cl.getResource("Common/UI/Custom/Pages/EcoCoins_BalanceHud.ui") != null;
+        boolean commonLeft = cl.getResource("Common/UI/Custom/Pages/EcoCoins_BalanceHud_Left.ui") != null;
+        boolean commonRight = cl.getResource("Common/UI/Custom/Pages/EcoCoins_BalanceHud_Right.ui") != null;
+        boolean uiDefault = cl.getResource("UI/Custom/Pages/EcoCoins_BalanceHud.ui") != null;
+        boolean uiLeft = cl.getResource("UI/Custom/Pages/EcoCoins_BalanceHud_Left.ui") != null;
+        boolean uiRight = cl.getResource("UI/Custom/Pages/EcoCoins_BalanceHud_Right.ui") != null;
 
-        if (commonPath || uiPath) {
-            getLogger().at(Level.INFO).log("[EcoCoins] HUD UI detectada en classpath. commonPath=" + commonPath + " uiPath=" + uiPath);
+        if ((commonLeft && commonRight) || (uiLeft && uiRight)) {
+            getLogger().at(Level.INFO).log("[EcoCoins] HUD UI detectada en classpath. common(default/left/right)="
+                    + commonDefault + "/" + commonLeft + "/" + commonRight
+                    + " ui(default/left/right)=" + uiDefault + "/" + uiLeft + "/" + uiRight);
         } else {
-            getLogger().at(Level.WARNING).log("[EcoCoins] HUD UI NO encontrada en classpath. Revisa assets.json y empaquetado de resources.");
+            getLogger().at(Level.WARNING).log("[EcoCoins] HUD UI incompleta en classpath. Revisa assets.json y empaquetado de resources.");
         }
     }
 
