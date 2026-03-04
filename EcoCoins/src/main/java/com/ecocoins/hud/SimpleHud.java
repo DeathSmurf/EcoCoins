@@ -49,6 +49,18 @@ public abstract class SimpleHud extends CustomUIHud {
         }
     }
 
+    public void sendUpdate(@Nonnull UICommandBuilder builder) {
+        try {
+            this.update(false, builder);
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Failed to send incremental HUD update for path: " + uiPath + " - " + e.getMessage());
+        }
+    }
+
+    public UICommandBuilder createBuilder() {
+        return new UICommandBuilder();
+    }
+
     @Override
     protected void build(@Nonnull UICommandBuilder builder) {
         builder.append(uiPath);
