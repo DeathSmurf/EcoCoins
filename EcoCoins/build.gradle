@@ -26,6 +26,7 @@ sourceSets {
 dependencies {
     compileOnly files("libs/HytaleServer.jar")
     compileOnly files("libs/EconomySystem-1.0.8.1-beta.jar")
+    compileOnly files("libs/MultipleHUD-1.0.6.jar")
 
     implementation "com.fasterxml.jackson.core:jackson-databind:2.17.2"
 }
