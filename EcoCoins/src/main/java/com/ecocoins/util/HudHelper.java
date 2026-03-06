@@ -29,6 +29,9 @@ public final class HudHelper {
     private HudHelper() {
     }
 
+    /**
+     * Inicializa compatibilidad con MultipleHUD una sola vez durante setup.
+     */
     public static void init() {
         tryEnableMultipleHud(false);
     }
@@ -43,7 +46,9 @@ public final class HudHelper {
                 setCustomHudMethod.invoke(multipleHudInstance, player, playerRef, HUD_ID, hud);
                 return;
             } catch (Exception e) {
-                disableMultipleHud("[EcoCoins] MultipleHUD setCustomHud falló, usando HUD vanilla: " + e.getMessage());
+                EcoCoins.getInstance().getLogger().at(Level.WARNING).log(
+                        "[EcoCoins] MultipleHUD setCustomHud falló, usando HUD vanilla: " + e.getMessage()
+                );
             }
         }
 
