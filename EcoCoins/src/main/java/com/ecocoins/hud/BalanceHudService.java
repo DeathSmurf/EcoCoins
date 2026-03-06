@@ -32,9 +32,8 @@ public final class BalanceHudService {
         EcoCoinBalanceHud hud = huds.computeIfAbsent(playerRef.getUuid(), ignored -> new EcoCoinBalanceHud(playerRef));
         hud.applyBalanceState(economyService.getBalance(playerRef.getUuid()));
 
-        // Patrón Ecotale: registrar HUD una sola vez por ciclo de conexión y luego renderizar.
+        // Patrón cercano a Ecotale: registrar una vez y dejar las actualizaciones en el HUD.
         HudHelper.setCustomHud(player, playerRef, hud);
-        hud.render();
     }
 
     public void hide(Player player, PlayerRef playerRef) {
@@ -65,6 +64,7 @@ public final class BalanceHudService {
         EcoCoinBalanceHud hud = huds.computeIfAbsent(playerRef.getUuid(), ignored -> new EcoCoinBalanceHud(playerRef));
         boolean changed = hud.applyBalanceState(economyService.getBalance(playerRef.getUuid()));
         if (changed) {
+            // Patrón Ecotale: no re-registrar en cada cambio; solo empujar updates del HUD.
             hud.render();
         }
     }
