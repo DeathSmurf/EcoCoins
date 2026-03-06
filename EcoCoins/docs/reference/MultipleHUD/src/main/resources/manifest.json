@@ -1,0 +1,20 @@
+{
+  "Group": "Buuz135",
+  "Name": "MultipleHUD",
+  "Version": "1.0.6",
+  "Description": "A simple mod that allows you to have multiple HUDs present at once.",
+  "Authors": [
+    {
+      "Name": "Buuz135"
+    }
+  ],
+  "Website": "https://buuz135.com",
+  "ServerVersion": "2026.02.17-255364b8e",
+  "Dependencies": {
+    "Hytale:EntityModule": "*"
+  },
+  "OptionalDependencies": {},
+  "DisabledByDefault": false,
+  "Main": "com.buuz135.mhud.MultipleHUD",
+  "IncludesAssetPack": true
+}

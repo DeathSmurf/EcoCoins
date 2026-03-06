@@ -1,0 +1,17 @@
+$C = "../Common.ui";
+TextButton {
+  Anchor: (Width: 320, Height: 32, Top: 100, Left:100);
+  Background: (Color: #00aa00);
+  Padding: (Left: 12, Right: 6, Top: 6, Bottom: 6);
+  Text: "This is a green button";
+  Style: TextButtonStyle(
+    Default: (
+      LabelStyle: (
+        FontSize: 14,
+        TextColor: #ffffffff
+      )
+    ),
+
+    Sounds: $C.@ButtonSounds
+  );
+}
