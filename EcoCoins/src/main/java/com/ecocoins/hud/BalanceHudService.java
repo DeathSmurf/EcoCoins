@@ -63,8 +63,10 @@ public final class BalanceHudService {
         }
 
         EcoCoinBalanceHud hud = huds.computeIfAbsent(playerRef.getUuid(), ignored -> new EcoCoinBalanceHud(playerRef));
-        hud.applyBalanceState(economyService.getBalance(playerRef.getUuid()));
-        hud.render();
+        boolean changed = hud.applyBalanceState(economyService.getBalance(playerRef.getUuid()));
+        if (changed) {
+            hud.render();
+        }
     }
 
     public void onDisconnect(PlayerRef playerRef) {
