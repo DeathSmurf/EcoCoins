@@ -32,12 +32,8 @@ public final class BalanceHudService {
         EcoCoinBalanceHud hud = huds.computeIfAbsent(playerRef.getUuid(), ignored -> new EcoCoinBalanceHud(playerRef));
         hud.applyBalanceState(economyService.getBalance(playerRef.getUuid()));
 
-        // Con MultipleHUD, setCustomHud ya fuerza el render dentro del contenedor compuesto.
-        // Llamar hud.render() después puede causar builds extra no prefijados.
+        // Patrón cercano a Ecotale: registrar una vez y dejar las actualizaciones en el HUD.
         HudHelper.setCustomHud(player, playerRef, hud);
-        if (!HudHelper.isMultipleHudAvailable()) {
-            hud.render();
-        }
     }
 
     public void hide(Player player, PlayerRef playerRef) {
@@ -68,11 +64,8 @@ public final class BalanceHudService {
         EcoCoinBalanceHud hud = huds.computeIfAbsent(playerRef.getUuid(), ignored -> new EcoCoinBalanceHud(playerRef));
         boolean changed = hud.applyBalanceState(economyService.getBalance(playerRef.getUuid()));
         if (changed) {
-            if (HudHelper.isMultipleHudAvailable()) {
-                HudHelper.setCustomHud(player, playerRef, hud);
-            } else {
-                hud.render();
-            }
+            // Patrón Ecotale: no re-registrar en cada cambio; solo empujar updates del HUD.
+            hud.render();
         }
     }
 
