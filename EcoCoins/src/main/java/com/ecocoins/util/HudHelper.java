@@ -23,6 +23,9 @@ public final class HudHelper {
     private static volatile Method setCustomHudMethod = null;
     private static volatile Method hideCustomHudMethod = null;
 
+    private static final String MULTIPLEHUD_DOCUMENT_RUNTIME_PATH = "UI/Custom/HUD/MultipleHUD.ui";
+    private static final String MULTIPLEHUD_DOCUMENT_SOURCE_PATH = "Common/UI/Custom/HUD/MultipleHUD.ui";
+
     private HudHelper() {
     }
 
