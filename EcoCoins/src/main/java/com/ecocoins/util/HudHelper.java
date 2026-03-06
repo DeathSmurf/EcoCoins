@@ -10,7 +10,7 @@ import java.util.logging.Level;
 
 /**
  * Helper para registrar HUD con compatibilidad opcional de MultipleHUD.
- * Patrón alineado con Ecotale: detectar una vez y fallback vanilla si falla la llamada reflectiva.
+ * Implementación alineada al patrón funcional de referencia Ecotale.
  */
 public final class HudHelper {
 
@@ -74,7 +74,7 @@ public final class HudHelper {
                 return;
             } catch (Exception e) {
                 EcoCoins.getInstance().getLogger().at(Level.WARNING).log(
-                        "[EcoCoins] MultipleHUD setCustomHud falló, fallback vanilla: " + e.getMessage()
+                        "[EcoCoins] MultipleHUD setCustomHud falló, usando HUD vanilla: " + e.getMessage()
                 );
             }
         }
