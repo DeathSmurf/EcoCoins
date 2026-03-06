@@ -22,6 +22,9 @@ public final class HudHelper {
     private static Method setCustomHudMethod = null;
     private static Method hideCustomHudMethod = null;
 
+    private static final String MULTIPLEHUD_DOCUMENT_RUNTIME_PATH = "UI/Custom/HUD/MultipleHUD.ui";
+    private static final String MULTIPLEHUD_DOCUMENT_SOURCE_PATH = "Common/UI/Custom/HUD/MultipleHUD.ui";
+
     private HudHelper() {
     }
 
@@ -32,6 +35,20 @@ public final class HudHelper {
             multipleHudInstance = getInstanceMethod.invoke(null);
 
             if (multipleHudInstance != null) {
+                ClassLoader mhudClassLoader = multipleHudClass.getClassLoader();
+                boolean hasMultipleHudDocument = mhudClassLoader.getResource(MULTIPLEHUD_DOCUMENT_RUNTIME_PATH) != null
+                        || mhudClassLoader.getResource(MULTIPLEHUD_DOCUMENT_SOURCE_PATH) != null;
+
+                if (!hasMultipleHudDocument) {
+                    multipleHudAvailable = false;
+                    EcoCoins.getInstance().getLogger().at(Level.WARNING).log(
+                            "[EcoCoins] MultipleHUD detectado, pero falta "
+                                    + MULTIPLEHUD_DOCUMENT_RUNTIME_PATH
+                                    + ". Fallback a HUD vanilla para evitar desconexiones."
+                    );
+                    return;
+                }
+
                 setCustomHudMethod = multipleHudClass.getMethod(
                         "setCustomHud",
                         Player.class,
