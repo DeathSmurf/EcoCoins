@@ -1,4 +1,4 @@
-Group #Panel_Anchor {
+Group #BalancePanel {
   Anchor: (Right: 0, Bottom: 152, Width: 190, Height: 28);
   Background: (Color: #1a1e2dd8);
   Padding: (Left: 10, Right: 10, Top: 4, Bottom: 4);
