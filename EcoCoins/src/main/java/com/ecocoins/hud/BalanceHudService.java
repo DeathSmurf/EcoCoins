@@ -2,7 +2,6 @@ package com.ecocoins.hud;
 
 import com.ecocoins.core.TheEconomyService;
 import com.ecocoins.util.HudHelper;
-import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 
@@ -46,11 +45,6 @@ public final class BalanceHudService {
         showOnJoin(player, playerRef);
     }
 
-    public EcoCoinBalanceHud.Position togglePosition(Player player, PlayerRef playerRef) {
-        player.sendMessage(Message.raw("[EcoCoins] /changeposition está desactivado por estabilidad. HUD fijo en esquina inferior derecha (estilo Ecotale)."));
-        return EcoCoinBalanceHud.Position.BOTTOM_RIGHT;
-    }
-
     public void updateBalance(Player player, PlayerRef playerRef) {
         if (player == null || playerRef == null) {
             return;
@@ -75,9 +69,5 @@ public final class BalanceHudService {
         }
         huds.remove(playerRef.getUuid());
         enabled.remove(playerRef.getUuid());
-    }
-
-    public void sendPositionMessage(Player player, EcoCoinBalanceHud.Position position) {
-        player.sendMessage(Message.raw("[EcoCoins] HUD fijo en esquina inferior derecha (estructura Ecotale estable)."));
     }
 }
