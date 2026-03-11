@@ -103,19 +103,3 @@ Pasos para dejarlo funcionando en tu servidor:
 1. Copia tu `Redeem.ogg` en `ExportedAssetPack/Common/Sounds/EcoCoins/Redeem.ogg`.
 2. Verifica que exista `ExportedAssetPack/Server/Audio/SoundEvents/SFX_EcoCoins_Redeem.json`.
 3. Reinicia el servidor.
-
-## UI de balance (HUD)
-
-EcoCoins muestra un HUD de balance en la esquina inferior, siguiendo la referencia visual de Ecotale.
-
-### Compatibilidad con MultipleHUD
-
-EcoCoins usa el mod **MultipleHUD** cuando está instalado para permitir múltiples HUD en pantalla al mismo tiempo.
-Si no está presente, EcoCoins usa el HUD vanilla (un solo HUD custom).
-
-Referencia de uso publicada por MultipleHUD:
-
-`MultipleHUD.getInstance().setCustomHud(player, playerRef, "Hud1", new TestUIHUD());`
-`MultipleHUD.getInstance().setCustomHud(player, playerRef, "Hud2", new TestUIHUD());`
-
-Maven: https://maven.hytale-mods.dev/
