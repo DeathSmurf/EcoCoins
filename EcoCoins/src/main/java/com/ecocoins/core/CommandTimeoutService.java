@@ -51,7 +51,7 @@ public final class CommandTimeoutService {
                                    int defaultSeconds,
                                    int vipSeconds,
                                    Runnable action) {
-        if (player == null || store == null || playerRef == null) {
+        if (player == null || store == null || playerEntityRef == null || !playerEntityRef.isValid()) {
             return;
         }
 
@@ -66,10 +66,9 @@ public final class CommandTimeoutService {
             return;
         }
 
-        BlockPos origin = resolveBlockPos(store, playerEntityRef, playerRef);
+        BlockPos origin = resolveBlockPos(store, playerEntityRef);
         if (origin == null) {
-            sendMessageIfOnline(store, playerEntityRef, playerRef,
-                    Message.raw("[EcoCoins] No pude resolver tu bloque actual para iniciar espera."));
+            player.sendMessage(Message.raw("[EcoCoins] No pude resolver tu bloque actual para iniciar espera."));
             return;
         }
 
@@ -77,18 +76,16 @@ public final class CommandTimeoutService {
         PendingCommand replaced = pendingByPlayer.remove(uuid);
         if (replaced != null) {
             replaced.cancel();
-            sendMessageIfOnline(store, playerEntityRef, playerRef,
-                    Message.raw("[EcoCoins] Se reemplazó el comando en espera por uno nuevo."));
+            player.sendMessage(Message.raw("[EcoCoins] Se reemplazó el comando en espera por uno nuevo."));
         }
 
-        sendMessageIfOnline(store, playerEntityRef, playerRef,
-                Message.raw("[EcoCoins] Espera " + waitSeconds + "s para ejecutar " + commandLabel
-                        + ". No salgas del bloque actual."));
+        player.sendMessage(Message.raw("[EcoCoins] Espera " + waitSeconds + "s para ejecutar " + commandLabel
+                + ". No salgas del bloque actual."));
 
         PendingCommand pending = new PendingCommand(uuid, origin, action, System.currentTimeMillis(), waitSeconds);
         pendingByPlayer.put(uuid, pending);
 
-        ScheduledFuture<?> future = scheduler.scheduleAtFixedRate(() -> tickPending(pending, store, playerEntityRef, playerRef),
+        ScheduledFuture<?> future = scheduler.scheduleAtFixedRate(() -> tickPending(pending, store, playerEntityRef),
                 TICK_MS, TICK_MS, TimeUnit.MILLISECONDS);
         pending.attachFuture(future);
     }
@@ -116,13 +113,18 @@ public final class CommandTimeoutService {
 
     private void tickPending(PendingCommand pending,
                              Store<EntityStore> store,
-                             Ref<EntityStore> playerEntityRef,
-                             PlayerRef playerRef) {
+                             Ref<EntityStore> playerEntityRef) {
         if (!pending.isActive()) {
             return;
         }
 
-        BlockPos current = resolveBlockPos(store, playerEntityRef, playerRef);
+        if (playerEntityRef == null || !playerEntityRef.isValid()) {
+            pendingByPlayer.remove(pending.playerUuid, pending);
+            pending.cancel();
+            return;
+        }
+
+        BlockPos current = resolveBlockPos(store, playerEntityRef);
         if (current == null) {
             pendingByPlayer.remove(pending.playerUuid, pending);
             pending.cancel();
@@ -132,7 +134,7 @@ public final class CommandTimeoutService {
         if (!pending.origin.equals(current)) {
             if (pendingByPlayer.remove(pending.playerUuid, pending)) {
                 pending.cancel();
-                sendMessageIfOnline(store, playerEntityRef, playerRef,
+                sendMessageIfOnline(store, playerEntityRef,
                         Message.raw("[EcoCoins] Comando cancelado: saliste del bloque donde lo activaste."));
             }
             return;
@@ -156,31 +158,19 @@ public final class CommandTimeoutService {
 
     private void sendMessageIfOnline(Store<EntityStore> store,
                                      Ref<EntityStore> playerEntityRef,
-                                     PlayerRef playerRef,
                                      Message message) {
-        if (store == null) return;
-        Player online = null;
-        if (playerEntityRef != null && playerEntityRef.isValid()) {
-            online = store.getComponent(playerEntityRef, Player.getComponentType());
-        }
-        if (online == null && playerRef != null) {
-            online = store.getComponent(playerRef, Player.getComponentType());
-        }
+        if (store == null || playerEntityRef == null || !playerEntityRef.isValid()) return;
+        Player online = store.getComponent(playerEntityRef, Player.getComponentType());
         if (online != null) {
             online.sendMessage(message);
         }
     }
 
     private BlockPos resolveBlockPos(Store<EntityStore> store,
-                                     Ref<EntityStore> playerEntityRef,
-                                     PlayerRef playerRef) {
-        TransformComponent transform = null;
-        if (playerEntityRef != null && playerEntityRef.isValid()) {
-            transform = store.getComponent(playerEntityRef, TransformComponent.getComponentType());
-        }
-        if (transform == null && playerRef != null) {
-            transform = store.getComponent(playerRef, TransformComponent.getComponentType());
-        }
+                                     Ref<EntityStore> playerEntityRef) {
+        if (store == null || playerEntityRef == null || !playerEntityRef.isValid()) return null;
+
+        TransformComponent transform = store.getComponent(playerEntityRef, TransformComponent.getComponentType());
         if (transform == null) return null;
 
         Vector3d pos = transform.getPosition();
