@@ -9,6 +9,7 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.tick.EntityTickingSystem;
 import com.hypixel.hytale.math.vector.Vector3d;
+import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
@@ -40,7 +41,10 @@ public final class CommandTimeoutMovementEvent {
 
         @Override
         public Query<EntityStore> getQuery() {
-            return Query.any();
+            return Query.and(
+                    PlayerRef.getComponentType(),
+                    TransformComponent.getComponentType()
+            );
         }
 
         @Override
@@ -59,7 +63,12 @@ public final class CommandTimeoutMovementEvent {
             }
 
             Ref<EntityStore> currentRef = chunk.getReferenceTo(index);
-            Vector3d currentPosition = playerRef.getTransform().getPosition();
+            TransformComponent transform = store.getComponent(currentRef, TransformComponent.getComponentType());
+            if (transform == null || transform.getPosition() == null) {
+                return;
+            }
+
+            Vector3d currentPosition = transform.getPosition();
             timeoutService.tick(playerRef.getUuid(), store, currentRef, currentPosition, deltaTime);
         }
     }

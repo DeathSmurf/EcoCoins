@@ -88,7 +88,6 @@ public final class EcoCoins extends JavaPlugin {
             getEventRegistry().registerGlobal(LivingEntityInventoryChangeEvent.class, this::onLivingEntityInventoryChange);
             getEventRegistry().registerGlobal(AddPlayerToWorldEvent.class, this::onAddPlayerToWorld);
             getEventRegistry().registerGlobal(PlayerDisconnectEvent.class, this::onPlayerDisconnect);
-            new CommandTimeoutMovementEvent(commandTimeoutService).register(getEntityStoreRegistry());
 
             getCommandRegistry().registerCommand(new ChangeMoneyCommand(languageManager, coinManager, economy, balanceHudService, commandTimeoutService));
             getCommandRegistry().registerCommand(new ChangeAllMoneyCommand(languageManager, coinManager, economy, balanceHudService, commandTimeoutService));
@@ -114,6 +113,9 @@ public final class EcoCoins extends JavaPlugin {
 
     @Override
     protected void start() {
+        if (commandTimeoutService != null) {
+            new CommandTimeoutMovementEvent(commandTimeoutService).register(getEntityStoreRegistry());
+        }
         getLogger().at(Level.INFO).log("[EcoCoins] start()... interactionTrigger=" + COIN_INTERACTION_TRIGGER);
         getLogger().at(Level.INFO).log("[EcoCoins] start() OK.");
     }
