@@ -1,6 +1,7 @@
 package com.ecocoins.commands;
 
 import com.ecocoins.core.CoinManager;
+import com.ecocoins.core.CommandTimeoutService;
 import com.ecocoins.core.InventoryUtil;
 import com.ecocoins.core.LanguageManager;
 import com.ecocoins.core.TheEconomyService;
@@ -33,13 +34,15 @@ public final class ChangeAllMoneyCommand extends AbstractPlayerCommand {
     private final CoinManager coins;
     private final TheEconomyService economy;
     private final BalanceHudService hudService;
+    private final CommandTimeoutService timeoutService;
 
-    public ChangeAllMoneyCommand(LanguageManager lang, CoinManager coins, TheEconomyService economy, BalanceHudService hudService) {
+    public ChangeAllMoneyCommand(LanguageManager lang, CoinManager coins, TheEconomyService economy, BalanceHudService hudService, CommandTimeoutService timeoutService) {
         super("changeall", "Convierte todas tus monedas físicas EcoCoins a dinero virtual.", false);
         this.lang = lang;
         this.coins = coins;
         this.economy = economy;
         this.hudService = hudService;
+        this.timeoutService = timeoutService;
 
         this.requirePermission(PERM_CHANGEALL_USE);
     }
@@ -54,6 +57,34 @@ public final class ChangeAllMoneyCommand extends AbstractPlayerCommand {
         Player player = store.getComponent(playerEntityRef, Player.getComponentType());
         if (player == null) {
             ctx.sendMessage(Message.raw("[EcoCoins] No pude resolver el Player entity."));
+            return;
+        }
+
+        String pLang = lang.resolveLang(playerRef.getLanguage());
+
+        if (!economy.isAvailable()) {
+            ctx.sendMessage(lang.trMsg(pLang, "command.changeall.economy_unavailable", Map.of()));
+            return;
+        }
+
+        timeoutService.executeWithTimeout(
+                player,
+                store,
+                playerEntityRef,
+                playerRef,
+                "/changeall",
+                15,
+                7,
+                () -> executeNow(ctx, store, playerEntityRef, playerRef)
+        );
+    }
+
+    private void executeNow(CommandContext ctx,
+                            Store<EntityStore> store,
+                            Ref<EntityStore> playerEntityRef,
+                            PlayerRef playerRef) {
+        Player player = store.getComponent(playerEntityRef, Player.getComponentType());
+        if (player == null) {
             return;
         }
 

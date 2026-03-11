@@ -71,7 +71,6 @@ tasks.register('generateAssetsJson') {
             }
         }
 
-
         def unique = entries.unique().sort()
         outputFile.text = "[\n" + unique.collect { "  \"${it}\"" }.join(",\n") + "\n]\n"
     }
