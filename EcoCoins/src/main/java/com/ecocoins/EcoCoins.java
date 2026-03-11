@@ -11,6 +11,7 @@ import com.ecocoins.core.CommandTimeoutService;
 import com.ecocoins.core.ConfigBootstrap;
 import com.ecocoins.core.LanguageManager;
 import com.ecocoins.core.TheEconomyService;
+import com.ecocoins.events.CommandTimeoutMovementEvent;
 import com.ecocoins.hud.BalanceHudService;
 import com.ecocoins.interactions.CoinRedeemInteraction;
 import com.ecocoins.util.HudHelper;
@@ -87,6 +88,7 @@ public final class EcoCoins extends JavaPlugin {
             getEventRegistry().registerGlobal(LivingEntityInventoryChangeEvent.class, this::onLivingEntityInventoryChange);
             getEventRegistry().registerGlobal(AddPlayerToWorldEvent.class, this::onAddPlayerToWorld);
             getEventRegistry().registerGlobal(PlayerDisconnectEvent.class, this::onPlayerDisconnect);
+            new CommandTimeoutMovementEvent(commandTimeoutService).register(getEntityStoreRegistry());
 
             getCommandRegistry().registerCommand(new ChangeMoneyCommand(languageManager, coinManager, economy, balanceHudService, commandTimeoutService));
             getCommandRegistry().registerCommand(new ChangeAllMoneyCommand(languageManager, coinManager, economy, balanceHudService, commandTimeoutService));

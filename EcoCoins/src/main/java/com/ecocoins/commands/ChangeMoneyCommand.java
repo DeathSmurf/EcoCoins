@@ -96,14 +96,12 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
             return;
         }
 
-        timeoutService.executeWithTimeout(
+        timeoutService.executeWithProfile(
                 player,
                 store,
                 playerEntityRef,
                 playerRef,
-                "/change",
-                5,
-                3,
+                CommandTimeoutService.TimeoutProfile.CHANGE,
                 () -> executePurchaseNow(ctx, store, playerEntityRef, playerRef, moneyName, amount)
         );
     }
