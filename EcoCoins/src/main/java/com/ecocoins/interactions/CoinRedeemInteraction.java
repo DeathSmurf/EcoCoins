@@ -40,7 +40,7 @@ public class CoinRedeemInteraction extends SimpleInteraction {
         // Mantener comportamiento base de SimpleInteraction (effects, next/failed chain, etc.)
         super.tick0(local, dt, type, context, cooldownHandler);
 
-        if (type != InteractionType.Secondary && type != InteractionType.Use) return;
+        if (type != InteractionType.Secondary) return;
 
         Ref<EntityStore> ref = context.getEntity();
         if (ref == null || !ref.isValid()) return;
