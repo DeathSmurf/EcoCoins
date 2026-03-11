@@ -1,5 +1,6 @@
 package com.ecocoins.core;
 
+import com.hypixel.hytale.component.CommandBuffer;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.vector.Vector3d;
@@ -12,17 +13,18 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.logger.HytaleLogger;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
 /**
- * Timeout tipo /tpa para comandos: espera por tiempo + cancelación si el jugador sale del mismo bloque.
+ * Timeout tipo Essentials para comandos: espera por tiempo + cancelación al salir del bloque origen.
  *
- * Compatibilidad Essentials:
- * - Se inicia un pending por comando.
- * - El contador se consume por tick del juego (no scheduler externo).
- * - Se cancela si cambia de bloque.
+ * Flujo equivalente a TeleportManager de Essentials:
+ * 1) queueCommand(...) registra pending con putIfAbsent
+ * 2) sistema de movimiento llama tick(...) cada frame de jugador
+ * 3) tick cancela por movimiento de bloque o ejecuta al completar contador
  */
 public final class CommandTimeoutService {
 
@@ -56,51 +58,13 @@ public final class CommandTimeoutService {
         }
     }
 
+    private enum TimeoutTier { DEFAULT, VIP, TIMEPASS }
+
     private final HytaleLogger logger;
     private final Map<UUID, PendingCommand> pendingByPlayer = new ConcurrentHashMap<>();
 
     public CommandTimeoutService(HytaleLogger logger) {
         this.logger = logger;
-    }
-
-    public void executeWithTimeout(Player player,
-                                   Store<EntityStore> store,
-                                   Ref<EntityStore> playerEntityRef,
-                                   PlayerRef playerRef,
-                                   String commandLabel,
-                                   int defaultSeconds,
-                                   int vipSeconds,
-                                   Runnable action) {
-        if (player == null || store == null || playerEntityRef == null || !playerEntityRef.isValid() || playerRef == null) {
-            return;
-        }
-
-        if (hasExplicitPermission(playerRef, PERM_TIMEPASS)) {
-            action.run();
-            return;
-        }
-
-        int waitSeconds = hasExplicitPermission(playerRef, PERM_VIP) ? vipSeconds : defaultSeconds;
-        if (waitSeconds <= 0) {
-            action.run();
-            return;
-        }
-
-        BlockPos origin = resolveBlockPos(store, playerEntityRef);
-        if (origin == null) {
-            player.sendMessage(Message.raw("[EcoCoins] No pude resolver tu bloque actual para iniciar espera."));
-            return;
-        }
-
-        UUID uuid = playerRef.getUuid();
-        PendingCommand pending = new PendingCommand(origin, action, waitSeconds);
-        PendingCommand existing = pendingByPlayer.putIfAbsent(uuid, pending);
-        if (existing != null) {
-            player.sendMessage(Message.raw("[EcoCoins] Ya tienes un comando en espera. Termínalo o cancélalo moviéndote de bloque."));
-            return;
-        }
-
-        player.sendMessage(Message.raw("[EcoCoins] Espera " + waitSeconds + "s para ejecutar " + commandLabel + ". No salgas del bloque actual."));
     }
 
     public void executeWithProfile(Player player,
@@ -126,16 +90,56 @@ public final class CommandTimeoutService {
         );
     }
 
+    public void executeWithTimeout(Player player,
+                                   Store<EntityStore> store,
+                                   Ref<EntityStore> playerEntityRef,
+                                   PlayerRef playerRef,
+                                   String commandLabel,
+                                   int defaultSeconds,
+                                   int vipSeconds,
+                                   Runnable action) {
+        if (player == null || store == null || playerEntityRef == null || !playerEntityRef.isValid() || playerRef == null) {
+            return;
+        }
+
+        TimeoutTier tier = resolveTimeoutTier(playerRef);
+        if (tier == TimeoutTier.TIMEPASS) {
+            action.run();
+            return;
+        }
+
+        int waitSeconds = (tier == TimeoutTier.VIP) ? vipSeconds : defaultSeconds;
+        if (waitSeconds <= 0) {
+            action.run();
+            return;
+        }
+
+        BlockPos origin = resolveBlockPos(store, playerEntityRef);
+        if (origin == null) {
+            player.sendMessage(Message.raw("[EcoCoins] No pude resolver tu bloque actual para iniciar espera."));
+            return;
+        }
+
+        PendingCommand pending = new PendingCommand(origin, action, waitSeconds);
+        PendingCommand existing = pendingByPlayer.putIfAbsent(playerRef.getUuid(), pending);
+        if (existing != null) {
+            player.sendMessage(Message.raw("[EcoCoins] Ya tienes un comando en espera. Por favor espera a que termine."));
+            return;
+        }
+
+        player.sendMessage(Message.raw("[EcoCoins] Espera " + waitSeconds + "s para ejecutar " + commandLabel + ". No salgas del bloque actual."));
+    }
+
     public boolean hasPending(UUID playerUuid) {
         return playerUuid != null && pendingByPlayer.containsKey(playerUuid);
     }
 
     public void tick(UUID playerUuid,
-                     Store<EntityStore> store,
                      Ref<EntityStore> currentRef,
                      Vector3d currentPosition,
-                     float deltaTimeSeconds) {
-        if (playerUuid == null || store == null || currentRef == null || !currentRef.isValid() || currentPosition == null) {
+                     float deltaTime,
+                     CommandBuffer<EntityStore> buffer) {
+        if (playerUuid == null || currentRef == null || !currentRef.isValid() || currentPosition == null || buffer == null) {
             return;
         }
 
@@ -146,26 +150,32 @@ public final class CommandTimeoutService {
 
         BlockPos current = BlockPos.from(currentPosition);
         if (!pending.origin.equals(current)) {
-            if (pendingByPlayer.remove(playerUuid, pending)) {
-                sendMessageIfOnline(store, currentRef,
-                        Message.raw("[EcoCoins] Comando cancelado: saliste del bloque donde lo activaste."));
+            PendingCommand removed = pendingByPlayer.remove(playerUuid);
+            if (removed != null) {
+                buffer.run(store -> sendMessageIfOnline(store, currentRef,
+                        Message.raw("[EcoCoins] Comando cancelado: saliste del bloque donde lo activaste.")));
             }
             return;
         }
 
-        pending.elapsedSeconds += deltaTimeSeconds;
+        pending.elapsedSeconds += deltaTime;
         if (pending.elapsedSeconds < pending.waitSeconds) {
             return;
         }
 
-        if (pendingByPlayer.remove(playerUuid, pending)) {
+        PendingCommand removed = pendingByPlayer.remove(playerUuid);
+        if (removed == null) {
+            return;
+        }
+
+        buffer.run(store -> {
             try {
-                pending.action.run();
+                removed.action.run();
             } catch (Throwable t) {
                 logger.at(Level.SEVERE).log("[EcoCoins] Error ejecutando comando diferido: "
                         + t.getClass().getName() + ": " + t.getMessage());
             }
-        }
+        });
     }
 
     public void cancelPending(PlayerRef playerRef) {
@@ -180,6 +190,48 @@ public final class CommandTimeoutService {
 
     public void shutdown() {
         pendingByPlayer.clear();
+    }
+
+    private TimeoutTier resolveTimeoutTier(PlayerRef playerRef) {
+        UUID uuid = playerRef.getUuid();
+        Set<String> groups = getGroupsSafe(uuid);
+        boolean onlyDefaultGroup = groups.isEmpty() || (groups.size() == 1 && groups.contains("default"));
+
+        if (groups.contains("ecocoins.timepass") || groups.contains("timepass")) {
+            return TimeoutTier.TIMEPASS;
+        }
+        if (!onlyDefaultGroup && hasPermissionSafe(uuid, PERM_TIMEPASS)) {
+            return TimeoutTier.TIMEPASS;
+        }
+
+        if (groups.contains("ecocoins.vip") || groups.contains("vip")) {
+            return TimeoutTier.VIP;
+        }
+        if (!onlyDefaultGroup && hasPermissionSafe(uuid, PERM_VIP)) {
+            return TimeoutTier.VIP;
+        }
+
+        return TimeoutTier.DEFAULT;
+    }
+
+    private Set<String> getGroupsSafe(UUID uuid) {
+        try {
+            Set<String> groups = PermissionsModule.get().getGroupsForUser(uuid);
+            return groups != null ? groups : Set.of();
+        } catch (Throwable t) {
+            return Set.of();
+        }
+    }
+
+    private boolean hasPermissionSafe(UUID uuid, String permissionNode) {
+        try {
+            return PermissionsModule.get().hasPermission(uuid, permissionNode);
+        } catch (Throwable t) {
+            logger.at(Level.WARNING).log("[EcoCoins] No pude consultar permisos para nodo '"
+                    + permissionNode + "'. Uso valor por defecto. Detalle: "
+                    + t.getClass().getSimpleName() + ": " + t.getMessage());
+            return false;
+        }
     }
 
     private void sendMessageIfOnline(Store<EntityStore> store,
@@ -203,25 +255,6 @@ public final class CommandTimeoutService {
         if (pos == null) return null;
 
         return BlockPos.from(pos);
-    }
-
-    /**
-     * Resuelve permisos de timeout desde PermissionsModule por UUID.
-     * Esto evita que estado OP/administrador implique bypass implícito si el nodo no fue asignado explícitamente.
-     */
-    private boolean hasExplicitPermission(PlayerRef playerRef, String permissionNode) {
-        if (playerRef == null || permissionNode == null || permissionNode.isBlank()) {
-            return false;
-        }
-
-        try {
-            return PermissionsModule.get().hasPermission(playerRef.getUuid(), permissionNode);
-        } catch (Throwable t) {
-            logger.at(Level.WARNING).log("[EcoCoins] No pude consultar permisos para nodo '"
-                    + permissionNode + "'. Uso valor por defecto (sin permiso). Detalle: "
-                    + t.getClass().getSimpleName() + ": " + t.getMessage());
-            return false;
-        }
     }
 
     private static final class PendingCommand {

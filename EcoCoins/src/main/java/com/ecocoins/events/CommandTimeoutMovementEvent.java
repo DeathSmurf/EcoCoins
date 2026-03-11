@@ -69,7 +69,7 @@ public final class CommandTimeoutMovementEvent {
             }
 
             Vector3d currentPosition = transform.getPosition();
-            timeoutService.tick(playerRef.getUuid(), store, currentRef, currentPosition, deltaTime);
+            timeoutService.tick(playerRef.getUuid(), currentRef, currentPosition, deltaTime, buffer);
         }
     }
 }
