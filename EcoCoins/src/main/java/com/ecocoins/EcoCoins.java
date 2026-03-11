@@ -11,6 +11,7 @@ import com.ecocoins.core.CommandTimeoutService;
 import com.ecocoins.core.ConfigBootstrap;
 import com.ecocoins.core.LanguageManager;
 import com.ecocoins.core.TheEconomyService;
+import com.ecocoins.events.CommandTimeoutMovementEvent;
 import com.ecocoins.hud.BalanceHudService;
 import com.ecocoins.interactions.CoinRedeemInteraction;
 import com.ecocoins.util.HudHelper;
@@ -112,6 +113,9 @@ public final class EcoCoins extends JavaPlugin {
 
     @Override
     protected void start() {
+        if (commandTimeoutService != null) {
+            new CommandTimeoutMovementEvent(commandTimeoutService).register(getEntityStoreRegistry());
+        }
         getLogger().at(Level.INFO).log("[EcoCoins] start()... interactionTrigger=" + COIN_INTERACTION_TRIGGER);
         getLogger().at(Level.INFO).log("[EcoCoins] start() OK.");
     }

@@ -73,12 +73,11 @@ public final class ChangeAllMoneyCommand extends AbstractPlayerCommand {
                 playerEntityRef,
                 playerRef,
                 CommandTimeoutService.TimeoutProfile.CHANGE_ALL,
-                () -> executeNow(ctx, store, playerEntityRef, playerRef)
+                () -> executeNow(store, playerEntityRef, playerRef)
         );
     }
 
-    private void executeNow(CommandContext ctx,
-                            Store<EntityStore> store,
+    private void executeNow(Store<EntityStore> store,
                             Ref<EntityStore> playerEntityRef,
                             PlayerRef playerRef) {
         Player player = store.getComponent(playerEntityRef, Player.getComponentType());
@@ -89,7 +88,7 @@ public final class ChangeAllMoneyCommand extends AbstractPlayerCommand {
         String pLang = lang.resolveLang(playerRef.getLanguage());
 
         if (!economy.isAvailable()) {
-            ctx.sendMessage(lang.trMsg(pLang, "command.changeall.economy_unavailable", Map.of()));
+            player.sendMessage(lang.trMsg(pLang, "command.changeall.economy_unavailable", Map.of()));
             return;
         }
 
@@ -119,7 +118,7 @@ public final class ChangeAllMoneyCommand extends AbstractPlayerCommand {
         }
 
         if (totalCoins <= 0 || totalPay <= 0.0) {
-            ctx.sendMessage(lang.trMsg(pLang, "command.changeall.no_coins", Map.of()));
+            player.sendMessage(lang.trMsg(pLang, "command.changeall.no_coins", Map.of()));
             return;
         }
 
@@ -132,13 +131,13 @@ public final class ChangeAllMoneyCommand extends AbstractPlayerCommand {
                 InventoryUtil.addItemId(player.getInventory(), batch.itemId(), batch.amount());
             }
 
-            ctx.sendMessage(lang.trMsg(pLang, "command.changeall.deposit_failed", Map.of()));
+            player.sendMessage(lang.trMsg(pLang, "command.changeall.deposit_failed", Map.of()));
             return;
         }
 
         playRedeemSound(player);
 
-        ctx.sendMessage(lang.trMsg(pLang, "command.changeall.success", Map.of(
+        player.sendMessage(lang.trMsg(pLang, "command.changeall.success", Map.of(
                 "coins", totalCoins,
                 "pay", totalPay
         )));
