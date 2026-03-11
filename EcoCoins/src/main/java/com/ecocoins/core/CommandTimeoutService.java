@@ -60,6 +60,33 @@ public final class CommandTimeoutService {
 
     private enum TimeoutTier { DEFAULT, VIP, TIMEPASS }
 
+    public enum TimeoutProfile {
+        CHANGE("/change", 5, 3),
+        CHANGE_ALL("/changeall", 15, 7);
+
+        private final String commandLabel;
+        private final int defaultSeconds;
+        private final int vipSeconds;
+
+        TimeoutProfile(String commandLabel, int defaultSeconds, int vipSeconds) {
+            this.commandLabel = commandLabel;
+            this.defaultSeconds = defaultSeconds;
+            this.vipSeconds = vipSeconds;
+        }
+
+        public String commandLabel() {
+            return commandLabel;
+        }
+
+        public int defaultSeconds() {
+            return defaultSeconds;
+        }
+
+        public int vipSeconds() {
+            return vipSeconds;
+        }
+    }
+
     private final HytaleLogger logger;
     private final Map<UUID, PendingCommand> pendingByPlayer = new ConcurrentHashMap<>();
 
@@ -176,6 +203,29 @@ public final class CommandTimeoutService {
                         + t.getClass().getName() + ": " + t.getMessage());
             }
         });
+    }
+
+    public void executeWithProfile(Player player,
+                                   Store<EntityStore> store,
+                                   Ref<EntityStore> playerEntityRef,
+                                   PlayerRef playerRef,
+                                   TimeoutProfile profile,
+                                   Runnable action) {
+        if (profile == null) {
+            action.run();
+            return;
+        }
+
+        executeWithTimeout(
+                player,
+                store,
+                playerEntityRef,
+                playerRef,
+                profile.commandLabel(),
+                profile.defaultSeconds(),
+                profile.vipSeconds(),
+                action
+        );
     }
 
     public void cancelPending(PlayerRef playerRef) {
