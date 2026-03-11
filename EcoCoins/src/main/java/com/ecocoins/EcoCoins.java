@@ -141,9 +141,10 @@ public final class EcoCoins extends JavaPlugin {
             getLogger().at(Level.INFO).log("[EcoCoins] interaction type registrado: " + COIN_CUSTOM_INTERACTION_ID
                     + " -> " + CoinRedeemInteraction.class.getSimpleName());
         } catch (Throwable t) {
-            getLogger().at(Level.WARNING).log("[EcoCoins] No se pudo registrar interaction type custom "
-                    + COIN_CUSTOM_INTERACTION_ID + ". Continuo con trigger=" + COIN_INTERACTION_TRIGGER
-                    + ". Detalle: " + t.getClass().getName() + ": " + t.getMessage());
+            getLogger().at(Level.SEVERE).log("[EcoCoins] No se pudo registrar interaction type "
+                    + COIN_CUSTOM_INTERACTION_ID + "."
+                    + " El canje requiere Type=" + COIN_CUSTOM_INTERACTION_ID
+                    + " en Secondary. Detalle: " + t.getClass().getName() + ": " + t.getMessage());
         }
     }
 
