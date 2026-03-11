@@ -30,6 +30,33 @@ public final class CommandTimeoutService {
 
     private static final long TICK_MS = 100L;
 
+    public enum TimeoutProfile {
+        CHANGE("/change", 5, 3),
+        CHANGE_ALL("/changeall", 15, 7);
+
+        private final String commandLabel;
+        private final int defaultSeconds;
+        private final int vipSeconds;
+
+        TimeoutProfile(String commandLabel, int defaultSeconds, int vipSeconds) {
+            this.commandLabel = commandLabel;
+            this.defaultSeconds = defaultSeconds;
+            this.vipSeconds = vipSeconds;
+        }
+
+        public String commandLabel() {
+            return commandLabel;
+        }
+
+        public int defaultSeconds() {
+            return defaultSeconds;
+        }
+
+        public int vipSeconds() {
+            return vipSeconds;
+        }
+    }
+
     private final HytaleLogger logger;
     private final ScheduledExecutorService scheduler;
     private final Map<UUID, PendingCommand> pendingByPlayer = new ConcurrentHashMap<>();
@@ -73,21 +100,41 @@ public final class CommandTimeoutService {
         }
 
         UUID uuid = playerRef.getUuid();
-        PendingCommand replaced = pendingByPlayer.remove(uuid);
-        if (replaced != null) {
-            replaced.cancel();
-            player.sendMessage(Message.raw("[EcoCoins] Se reemplazó el comando en espera por uno nuevo."));
+        PendingCommand pending = new PendingCommand(uuid, origin, action, System.currentTimeMillis(), waitSeconds);
+        PendingCommand existing = pendingByPlayer.putIfAbsent(uuid, pending);
+        if (existing != null) {
+            player.sendMessage(Message.raw("[EcoCoins] Ya tienes un comando en espera. Termínalo o cancélalo moviéndote de bloque."));
+            return;
         }
 
-        player.sendMessage(Message.raw("[EcoCoins] Espera " + waitSeconds + "s para ejecutar " + commandLabel
-                + ". No salgas del bloque actual."));
-
-        PendingCommand pending = new PendingCommand(uuid, origin, action, System.currentTimeMillis(), waitSeconds);
-        pendingByPlayer.put(uuid, pending);
+        player.sendMessage(Message.raw("[EcoCoins] Espera " + waitSeconds + "s para ejecutar " + commandLabel + ". No salgas del bloque actual."));
 
         ScheduledFuture<?> future = scheduler.scheduleAtFixedRate(() -> tickPending(pending, store, playerEntityRef),
                 TICK_MS, TICK_MS, TimeUnit.MILLISECONDS);
         pending.attachFuture(future);
+    }
+
+    public void executeWithProfile(Player player,
+                                   Store<EntityStore> store,
+                                   Ref<EntityStore> playerEntityRef,
+                                   PlayerRef playerRef,
+                                   TimeoutProfile profile,
+                                   Runnable action) {
+        if (profile == null) {
+            action.run();
+            return;
+        }
+
+        executeWithTimeout(
+                player,
+                store,
+                playerEntityRef,
+                playerRef,
+                profile.commandLabel(),
+                profile.defaultSeconds(),
+                profile.vipSeconds(),
+                action
+        );
     }
 
     public void cancelPending(PlayerRef playerRef) {
