@@ -1,60 +1,27 @@
-# EcoCoins + Interaction Secondary (Type: Simple)
+# EcoCoins + Interaction Secondary (Type: EcoCoins_CoinRedeem)
 
-Esta guía documenta el patrón que usa **BooksAndPapers** y cómo aplicarlo en **EcoCoins** para canjear monedas desde la mano del jugador.
+Esta guía define la configuración válida para canjear monedas físicas en EcoCoins.
 
-## 1) Qué hace BooksAndPapers
+## Tipo obligatorio
 
-En `Books_And_Papers_Book.json` el item define una interacción en `Interactions -> Secondary` con una lista de acciones:
-
-1. una interacción `Type: "Simple"` (efecto local)
-2. una interacción `Type: "OpenCustomUI"` (abre UI)
-
-Ejemplo real (resumido):
+En el item, el `Type` debe ser exactamente:
 
 ```json
-"Interactions": {
-  "Secondary": {
-    "Interactions": [
-      {
-        "Type": "Simple",
-        "Effects": {
-          "LocalSoundEventId": "SFX_Books_And_Papers_Open"
-        }
-      },
-      {
-        "Type": "OpenCustomUI",
-        "Page": {
-          "Id": "Books_And_Papers_Book"
-        }
-      }
-    ]
-  }
-}
+"Type": "EcoCoins_CoinRedeem"
 ```
 
-## 2) Qué necesita EcoCoins para canjear
+Ruta completa:
 
-EcoCoins escucha `PlayerInteractEvent` y procesa el canje cuando:
+`BlockType > Interactions > Secondary > Interactions > 0 > Type > EcoCoins_CoinRedeem`
 
-- `event.getActionType() == InteractionType.Secondary`
-- el `itemId` del item en mano coincide con `name_item` en `EcoCoins/Coins/*.json`
-
-Si coincide:
-
-1. consume `x1` moneda física,
-2. deposita `pay` al balance digital,
-3. si falla el depósito, intenta rollback devolviendo la moneda.
-
-## 3) Plantilla mínima para tus monedas físicas
-
-En el JSON del item físico (el que vive en tu asset pack de items), usa:
+## Plantilla mínima
 
 ```json
 "Interactions": {
   "Secondary": {
     "Interactions": [
       {
-        "Type": "Simple",
+        "Type": "EcoCoins_CoinRedeem",
         "Effects": {
           "LocalSoundEventId": "SFX_UI_Craft"
         }
@@ -64,24 +31,14 @@ En el JSON del item físico (el que vive en tu asset pack de items), usa:
 }
 ```
 
-También puedes usar el alias de EcoCoins:
+## Requisitos de canje
 
-```json
-"Type": "EcoCoins_CoinRedeem"
-```
+1. El item físico debe existir y estar registrado en tu asset pack.
+2. El `itemId` del item debe coincidir exactamente con `name_item` en `EcoCoins/Coins/*.json`.
+3. EcoCoins debe registrar correctamente `EcoCoins_CoinRedeem` en `setup()`.
+4. TheEconomy debe estar disponible en runtime.
 
-Ese alias se registra en `setup()` como `SimpleInteraction`.
+## Verificación rápida
 
-## 4) Checklist rápido
-
-- El item físico existe en el mod.zip (registrado correctamente).
-- Tiene `Interactions.Secondary.Interactions[0].Type = "Simple"` (o `EcoCoins_CoinRedeem`).
-- El `itemId` exacto del item coincide con `name_item` en `EcoCoins/Coins/*.json`.
-- TheEconomy está disponible en runtime.
-
-## 5) Caso típico de error
-
-Si hay `Secondary` pero no deposita:
-
-- normalmente el `itemId` real del item no coincide con `name_item`.
-- revisa logs con prefijo `[EcoCoins][Redeem]` para ver si fue ignorado o falló el depósito.
+- En startup debes ver: `interaction type registrado: EcoCoins_CoinRedeem`.
+- Si ese log no aparece, el canje no funcionará hasta corregir el registro.

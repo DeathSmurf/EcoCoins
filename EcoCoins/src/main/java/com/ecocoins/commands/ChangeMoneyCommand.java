@@ -3,6 +3,7 @@ package com.ecocoins.commands;
 import com.ecocoins.core.CoinManager;
 import com.ecocoins.core.InventoryUtil;
 import com.ecocoins.core.LanguageManager;
+import com.ecocoins.core.CommandTimeoutService;
 import com.ecocoins.core.TheEconomyService;
 import com.ecocoins.hud.BalanceHudService;
 import com.ecocoins.model.CoinDefinition;
@@ -35,18 +36,20 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
     private final CoinManager coins;
     private final TheEconomyService economy;
     private final BalanceHudService hudService;
+    private final CommandTimeoutService timeoutService;
 
     private final RequiredArg<String> moneyNameArg;
     @SuppressWarnings("unused")
     private final DefaultArg<Integer> amountDefaultArg;
 
-    public ChangeMoneyCommand(LanguageManager lang, CoinManager coins, TheEconomyService economy, BalanceHudService hudService) {
+    public ChangeMoneyCommand(LanguageManager lang, CoinManager coins, TheEconomyService economy, BalanceHudService hudService, CommandTimeoutService timeoutService) {
         super("change", "Convierte dinero virtual (TheEconomy) en monedas físicas (EcoCoins).", false);
 
         this.lang = lang;
         this.coins = coins;
         this.economy = economy;
         this.hudService = hudService;
+        this.timeoutService = timeoutService;
 
         this.requirePermission(PERM_CHANGE_USE);
 
@@ -70,10 +73,10 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
             return;
         }
 
-        executePurchase(ctx, store, playerEntityRef, playerRef, moneyName, 1);
+        executePurchaseWithTimeout(ctx, store, playerEntityRef, playerRef, moneyName, 1);
     }
 
-    private void executePurchase(CommandContext ctx,
+    private void executePurchaseWithTimeout(CommandContext ctx,
                                  Store<EntityStore> store,
                                  Ref<EntityStore> playerEntityRef,
                                  PlayerRef playerRef,
@@ -92,6 +95,31 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
             ctx.sendMessage(lang.trMsg(pLang, "command.change.invalid_amount", Map.of("amount", amount)));
             return;
         }
+
+        timeoutService.executeWithTimeout(
+                player,
+                store,
+                playerEntityRef,
+                playerRef,
+                "/change",
+                5,
+                3,
+                () -> executePurchaseNow(ctx, store, playerEntityRef, playerRef, moneyName, amount)
+        );
+    }
+
+    private void executePurchaseNow(CommandContext ctx,
+                                    Store<EntityStore> store,
+                                    Ref<EntityStore> playerEntityRef,
+                                    PlayerRef playerRef,
+                                    String moneyName,
+                                    int amount) {
+        Player player = store.getComponent(playerEntityRef, Player.getComponentType());
+        if (player == null) {
+            return;
+        }
+
+        String pLang = lang.resolveLang(playerRef.getLanguage());
 
         Optional<CoinDefinition> coinOpt = coins.findByMoneyName(moneyName);
         if (coinOpt.isEmpty()) {
@@ -236,7 +264,7 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
                 return;
             }
 
-            ChangeMoneyCommand.this.executePurchase(ctx, store, playerEntityRef, playerRef, moneyName, amount);
+            ChangeMoneyCommand.this.executePurchaseWithTimeout(ctx, store, playerEntityRef, playerRef, moneyName, amount);
         }
     }
 

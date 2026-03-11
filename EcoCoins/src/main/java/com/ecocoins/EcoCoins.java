@@ -4,10 +4,10 @@ import com.ecocoins.commands.ChangeAllMoneyCommand;
 import com.ecocoins.commands.ChangeHudOffCommand;
 import com.ecocoins.commands.ChangeHudOnCommand;
 import com.ecocoins.commands.ChangeMoneyCommand;
-import com.ecocoins.commands.ChangePositionCommand;
 import com.ecocoins.core.CoinManager;
 import com.ecocoins.core.CoinPickupSoundService;
 import com.ecocoins.core.CoinRedeemService;
+import com.ecocoins.core.CommandTimeoutService;
 import com.ecocoins.core.ConfigBootstrap;
 import com.ecocoins.core.LanguageManager;
 import com.ecocoins.core.TheEconomyService;
@@ -42,6 +42,7 @@ public final class EcoCoins extends JavaPlugin {
     private BalanceHudService balanceHudService;
     private CoinRedeemService coinRedeemService;
     private CoinPickupSoundService coinPickupSoundService;
+    private CommandTimeoutService commandTimeoutService;
 
     public EcoCoins(@Nonnull JavaPluginInit init) {
         super(init);
@@ -65,6 +66,7 @@ public final class EcoCoins extends JavaPlugin {
             this.balanceHudService = new BalanceHudService(economy);
             this.coinRedeemService = new CoinRedeemService(getLogger(), coinManager, economy, languageManager, balanceHudService, REDEEM_DEBUG_LOGS);
             this.coinPickupSoundService = new CoinPickupSoundService(getLogger(), coinManager);
+            this.commandTimeoutService = new CommandTimeoutService(getLogger());
 
             HudHelper.init();
             registerCoinInteractionType();
@@ -86,9 +88,8 @@ public final class EcoCoins extends JavaPlugin {
             getEventRegistry().registerGlobal(AddPlayerToWorldEvent.class, this::onAddPlayerToWorld);
             getEventRegistry().registerGlobal(PlayerDisconnectEvent.class, this::onPlayerDisconnect);
 
-            getCommandRegistry().registerCommand(new ChangeMoneyCommand(languageManager, coinManager, economy, balanceHudService));
-            getCommandRegistry().registerCommand(new ChangeAllMoneyCommand(languageManager, coinManager, economy, balanceHudService));
-            getCommandRegistry().registerCommand(new ChangePositionCommand(balanceHudService));
+            getCommandRegistry().registerCommand(new ChangeMoneyCommand(languageManager, coinManager, economy, balanceHudService, commandTimeoutService));
+            getCommandRegistry().registerCommand(new ChangeAllMoneyCommand(languageManager, coinManager, economy, balanceHudService, commandTimeoutService));
             getCommandRegistry().registerCommand(new ChangeHudOffCommand(balanceHudService));
             getCommandRegistry().registerCommand(new ChangeHudOnCommand(balanceHudService));
 
@@ -97,7 +98,7 @@ public final class EcoCoins extends JavaPlugin {
                             + " langs=" + languageManager.countLanguages()
                             + " theEconomy=" + economy.isAvailable()
                             + " interactionTrigger=" + COIN_INTERACTION_TRIGGER
-                            + " (comandos: /change /changeall /changeposition /changeoff /changeon)"
+                            + " (comandos: /change /changeall /changeoff /changeon)"
             );
 
         } catch (Throwable t) {
@@ -117,24 +118,22 @@ public final class EcoCoins extends JavaPlugin {
 
     @Override
     protected void shutdown() {
+        if (commandTimeoutService != null) {
+            commandTimeoutService.shutdown();
+        }
         getLogger().at(Level.INFO).log("[EcoCoins] shutdown()");
     }
 
     private void validateHudResources() {
         ClassLoader cl = EcoCoins.class.getClassLoader();
         boolean commonDefault = cl.getResource("Common/UI/Custom/Pages/EcoCoins_BalanceHud.ui") != null;
-        boolean commonLeft = cl.getResource("Common/UI/Custom/Pages/EcoCoins_BalanceHud_Left.ui") != null;
-        boolean commonRight = cl.getResource("Common/UI/Custom/Pages/EcoCoins_BalanceHud_Right.ui") != null;
         boolean uiDefault = cl.getResource("UI/Custom/Pages/EcoCoins_BalanceHud.ui") != null;
-        boolean uiLeft = cl.getResource("UI/Custom/Pages/EcoCoins_BalanceHud_Left.ui") != null;
-        boolean uiRight = cl.getResource("UI/Custom/Pages/EcoCoins_BalanceHud_Right.ui") != null;
 
-        if ((commonLeft && commonRight) || (uiLeft && uiRight)) {
-            getLogger().at(Level.INFO).log("[EcoCoins] HUD UI detectada en classpath. common(default/left/right)="
-                    + commonDefault + "/" + commonLeft + "/" + commonRight
-                    + " ui(default/left/right)=" + uiDefault + "/" + uiLeft + "/" + uiRight);
+        if (commonDefault || uiDefault) {
+            getLogger().at(Level.INFO).log("[EcoCoins] HUD UI detectada en classpath. common(default)="
+                    + commonDefault + " ui(default)=" + uiDefault);
         } else {
-            getLogger().at(Level.WARNING).log("[EcoCoins] HUD UI incompleta en classpath. Revisa assets.json y empaquetado de resources.");
+            getLogger().at(Level.WARNING).log("[EcoCoins] HUD UI no detectada en classpath. Revisa assets.json y empaquetado de resources.");
         }
     }
 
@@ -148,9 +147,10 @@ public final class EcoCoins extends JavaPlugin {
             getLogger().at(Level.INFO).log("[EcoCoins] interaction type registrado: " + COIN_CUSTOM_INTERACTION_ID
                     + " -> " + CoinRedeemInteraction.class.getSimpleName());
         } catch (Throwable t) {
-            getLogger().at(Level.WARNING).log("[EcoCoins] No se pudo registrar interaction type custom "
-                    + COIN_CUSTOM_INTERACTION_ID + ". Continuo con trigger=" + COIN_INTERACTION_TRIGGER
-                    + ". Detalle: " + t.getClass().getName() + ": " + t.getMessage());
+            getLogger().at(Level.SEVERE).log("[EcoCoins] No se pudo registrar interaction type "
+                    + COIN_CUSTOM_INTERACTION_ID + "."
+                    + " El canje requiere Type=" + COIN_CUSTOM_INTERACTION_ID
+                    + " en Secondary. Detalle: " + t.getClass().getName() + ": " + t.getMessage());
         }
     }
 
@@ -165,6 +165,9 @@ public final class EcoCoins extends JavaPlugin {
     private void onPlayerDisconnect(PlayerDisconnectEvent event) {
         if (balanceHudService != null) {
             balanceHudService.onDisconnect(event.getPlayerRef());
+        }
+        if (commandTimeoutService != null) {
+            commandTimeoutService.cancelPending(event.getPlayerRef());
         }
     }
 
