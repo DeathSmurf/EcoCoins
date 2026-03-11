@@ -7,6 +7,7 @@ import com.ecocoins.commands.ChangeMoneyCommand;
 import com.ecocoins.core.CoinManager;
 import com.ecocoins.core.CoinPickupSoundService;
 import com.ecocoins.core.CoinRedeemService;
+import com.ecocoins.core.CommandTimeoutService;
 import com.ecocoins.core.ConfigBootstrap;
 import com.ecocoins.core.LanguageManager;
 import com.ecocoins.core.TheEconomyService;
@@ -41,6 +42,7 @@ public final class EcoCoins extends JavaPlugin {
     private BalanceHudService balanceHudService;
     private CoinRedeemService coinRedeemService;
     private CoinPickupSoundService coinPickupSoundService;
+    private CommandTimeoutService commandTimeoutService;
 
     public EcoCoins(@Nonnull JavaPluginInit init) {
         super(init);
@@ -64,6 +66,7 @@ public final class EcoCoins extends JavaPlugin {
             this.balanceHudService = new BalanceHudService(economy);
             this.coinRedeemService = new CoinRedeemService(getLogger(), coinManager, economy, languageManager, balanceHudService, REDEEM_DEBUG_LOGS);
             this.coinPickupSoundService = new CoinPickupSoundService(getLogger(), coinManager);
+            this.commandTimeoutService = new CommandTimeoutService(getLogger());
 
             HudHelper.init();
             registerCoinInteractionType();
@@ -85,8 +88,8 @@ public final class EcoCoins extends JavaPlugin {
             getEventRegistry().registerGlobal(AddPlayerToWorldEvent.class, this::onAddPlayerToWorld);
             getEventRegistry().registerGlobal(PlayerDisconnectEvent.class, this::onPlayerDisconnect);
 
-            getCommandRegistry().registerCommand(new ChangeMoneyCommand(languageManager, coinManager, economy, balanceHudService));
-            getCommandRegistry().registerCommand(new ChangeAllMoneyCommand(languageManager, coinManager, economy, balanceHudService));
+            getCommandRegistry().registerCommand(new ChangeMoneyCommand(languageManager, coinManager, economy, balanceHudService, commandTimeoutService));
+            getCommandRegistry().registerCommand(new ChangeAllMoneyCommand(languageManager, coinManager, economy, balanceHudService, commandTimeoutService));
             getCommandRegistry().registerCommand(new ChangeHudOffCommand(balanceHudService));
             getCommandRegistry().registerCommand(new ChangeHudOnCommand(balanceHudService));
 
@@ -115,6 +118,9 @@ public final class EcoCoins extends JavaPlugin {
 
     @Override
     protected void shutdown() {
+        if (commandTimeoutService != null) {
+            commandTimeoutService.shutdown();
+        }
         getLogger().at(Level.INFO).log("[EcoCoins] shutdown()");
     }
 
@@ -159,6 +165,9 @@ public final class EcoCoins extends JavaPlugin {
     private void onPlayerDisconnect(PlayerDisconnectEvent event) {
         if (balanceHudService != null) {
             balanceHudService.onDisconnect(event.getPlayerRef());
+        }
+        if (commandTimeoutService != null) {
+            commandTimeoutService.cancelPending(event.getPlayerRef());
         }
     }
 

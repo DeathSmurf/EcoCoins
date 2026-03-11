@@ -63,6 +63,28 @@ Si no deposita balance al usar la moneda, revisa logs con prefijo `"[EcoCoins][R
 - guía de EcoCoins: `docs/reference/EcoCoins_SecondaryInteraction_Guide.md`
 - plantilla lista para copiar: `docs/reference/templates/Template_EcoCoins_Coin_Item.json`
 
+
+## Timeout de comandos (/change y /changeall)
+
+EcoCoins aplica un sistema de espera antes de ejecutar:
+
+- `/change <moneda>` y `/change <moneda> <cantidad>`
+  - default: `5s`
+  - VIP (`ecocoins.vip`): `3s`
+- `/changeall`
+  - default: `15s`
+  - VIP (`ecocoins.vip`): `7s`
+
+Permisos con prioridad:
+
+1. `ecocoins.timepass` → sin espera (ejecución inmediata)
+2. `ecocoins.vip` → espera corta
+3. sin ambos → espera por defecto
+
+Durante la espera, el jugador debe permanecer en el mismo bloque donde ejecutó el comando.
+Si cambia a otro bloque antes de terminar el tiempo, el comando se cancela.
+Si el jugador se desconecta durante la espera, también se cancela.
+
 ## Nodos de permisos (LuckPerms)
 
 - `ecocoins.redeem.use`  
@@ -73,6 +95,10 @@ Si no deposita balance al usar la moneda, revisa logs con prefijo `"[EcoCoins][R
   Permite usar `/change` para ver monedas y `pay`.
 - `ecocoins.command.changeall.use`  
   Permite usar `/changeall` para canjear todas las monedas físicas del inventario.
+- `ecocoins.vip`
+  Aplica timeout corto en `/change` y `/changeall`.
+- `ecocoins.timepass`
+  Omite timeout en `/change` y `/changeall` (ejecución inmediata).
 - `ecocoins.command.changeoff.use`
   Permite usar `/changeoff` para ocultar el HUD.
 - `ecocoins.command.changeon.use`
