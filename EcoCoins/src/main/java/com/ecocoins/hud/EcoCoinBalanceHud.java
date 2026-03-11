@@ -6,7 +6,7 @@ import java.util.Locale;
 
 public final class EcoCoinBalanceHud extends SimpleHud {
 
-    private static final String CURRENCY_NAME = "EcoCoin";
+    private static final String CURRENCY_NAME = "Coins";
     private static final String CURRENCY_SYMBOL = "$";
 
     private double displayedBalance = Double.NaN;
