@@ -136,7 +136,7 @@ public final class CoinRedeemService {
     }
 
     private static boolean isRedeemTrigger(InteractionType actionType) {
-        return actionType == InteractionType.Secondary || actionType == InteractionType.Use;
+        return actionType == InteractionType.Secondary;
     }
 
     private Message tr(Player player, String key) {

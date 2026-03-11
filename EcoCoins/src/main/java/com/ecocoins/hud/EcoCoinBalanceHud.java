@@ -11,13 +11,6 @@ public final class EcoCoinBalanceHud extends SimpleHud {
 
     private double displayedBalance = Double.NaN;
 
-    public enum Position {
-        BOTTOM_RIGHT;
-
-        public Position toggle() {
-            return BOTTOM_RIGHT;
-        }
-    }
 
     public EcoCoinBalanceHud(PlayerRef playerRef) {
         super(playerRef, "Pages/EcoCoins_BalanceHud.ui");
