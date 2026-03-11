@@ -1,0 +1,242 @@
+package com.nhulston.essentials.managers;
+
+import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.Universe;
+import com.nhulston.essentials.Essentials;
+import com.nhulston.essentials.util.ConfigManager;
+import com.nhulston.essentials.util.Log;
+import com.nhulston.essentials.util.MessageManager;
+import com.nhulston.essentials.util.Msg;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.*;
+
+/**
+ * Manages teleport requests between players.
+ * A target player can have multiple pending requests from different players.
+ */
+public class TpaManager {
+    // Map of target player UUID -> Map of requester UUID -> request
+    private final ConcurrentHashMap<UUID, ConcurrentHashMap<UUID, TpaRequest>> pendingRequests = new ConcurrentHashMap<>();
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+    private final MessageManager messages;
+    private final ConfigManager configManager;
+    
+    public TpaManager(ConfigManager configManager) {
+        this.messages = Essentials.getInstance().getMessageManager();
+        this.configManager = configManager;
+    }
+
+    /**
+     * Creates a teleport request from one player to another.
+     * @param requester The player requesting to teleport
+     * @param target The player being requested to accept
+     * @return true if request was created, false if there's already a pending request from this requester
+     */
+    public boolean createRequest(@Nonnull PlayerRef requester, @Nonnull PlayerRef target) {
+        UUID targetUuid = target.getUuid();
+        UUID requesterUuid = requester.getUuid();
+        
+        // Get or create the map of requests for this target
+        ConcurrentHashMap<UUID, TpaRequest> targetRequests = pendingRequests.computeIfAbsent(
+            targetUuid, _ -> new ConcurrentHashMap<>()
+        );
+        
+        // Check if there's already a pending request from this requester
+        if (targetRequests.containsKey(requesterUuid)) {
+            return false;
+        }
+        
+        // Create new request
+        TpaRequest request = new TpaRequest(requesterUuid, requester.getUsername(), target.getUsername());
+        targetRequests.put(requesterUuid, request);
+        
+        // Schedule expiration
+        long expirationSeconds = configManager.getTpaExpiration();
+        ScheduledFuture<?> future = scheduler.schedule(() -> {
+            expireRequest(targetUuid, requesterUuid);
+        }, expirationSeconds, TimeUnit.SECONDS);
+        request.setExpirationFuture(future);
+        
+        Log.info("TPA request created: " + requester.getUsername() + " -> " + target.getUsername());
+        return true;
+    }
+
+    /**
+     * Accepts the most recent teleport request.
+     * @param target The player accepting the request
+     * @return The TpaRequest if found and valid, null otherwise
+     */
+    @Nullable
+    public TpaRequest acceptMostRecentRequest(@Nonnull PlayerRef target) {
+        return acceptRequestInternal(target, null);
+    }
+
+    /**
+     * Accepts a teleport request from a specific player.
+     * @param target The player accepting the request
+     * @param requesterName The name of the requester
+     * @return The TpaRequest if found and valid, null otherwise
+     */
+    @Nullable
+    public TpaRequest acceptRequest(@Nonnull PlayerRef target, @Nonnull String requesterName) {
+        return acceptRequestInternal(target, requesterName);
+    }
+
+    @Nullable
+    private TpaRequest acceptRequestInternal(@Nonnull PlayerRef target, @Nullable String requesterName) {
+        UUID targetUuid = target.getUuid();
+        ConcurrentHashMap<UUID, TpaRequest> targetRequests = pendingRequests.get(targetUuid);
+        
+        if (targetRequests == null || targetRequests.isEmpty()) {
+            return null;
+        }
+        
+        TpaRequest foundRequest = null;
+        UUID foundRequesterUuid = null;
+        
+        if (requesterName == null) {
+            // Find the most recent request by timestamp
+            long mostRecentTimestamp = 0;
+            
+            for (Map.Entry<UUID, TpaRequest> entry : targetRequests.entrySet()) {
+                TpaRequest request = entry.getValue();
+                if (request.getTimestamp() > mostRecentTimestamp) {
+                    foundRequest = request;
+                    foundRequesterUuid = entry.getKey();
+                    mostRecentTimestamp = request.getTimestamp();
+                }
+            }
+        } else {
+            // Find the request by requester name (case-insensitive)
+            for (Map.Entry<UUID, TpaRequest> entry : targetRequests.entrySet()) {
+                if (entry.getValue().getRequesterName().equalsIgnoreCase(requesterName)) {
+                    foundRequest = entry.getValue();
+                    foundRequesterUuid = entry.getKey();
+                    break;
+                }
+            }
+        }
+        
+        if (foundRequest == null) {
+            return null;
+        }
+        
+        // Remove the request and cancel its expiration
+        targetRequests.remove(foundRequesterUuid);
+        foundRequest.cancel();
+        
+        // Clean up empty maps
+        if (targetRequests.isEmpty()) {
+            pendingRequests.remove(targetUuid);
+        }
+        
+        Log.info("TPA request accepted: " + foundRequest.getRequesterName() + " -> " + target.getUsername());
+        return foundRequest;
+    }
+
+    /**
+     * Expires a request and notifies the requester.
+     */
+    private void expireRequest(UUID targetUuid, UUID requesterUuid) {
+        ConcurrentHashMap<UUID, TpaRequest> targetRequests = pendingRequests.get(targetUuid);
+        if (targetRequests == null) {
+            return;
+        }
+        
+        TpaRequest request = targetRequests.remove(requesterUuid);
+        if (request != null) {
+            // Clean up empty maps
+            if (targetRequests.isEmpty()) {
+                pendingRequests.remove(targetUuid);
+            }
+            
+            // Notify the requester that their request expired
+            PlayerRef requester = Universe.get().getPlayer(requesterUuid);
+            if (requester != null) {
+                Msg.send(requester, messages.get("tpa.request-expired", Map.of("player", request.getTargetName())));
+            }
+        }
+    }
+
+    /**
+     * Cleans up all requests involving a player (both as requester and target).
+     * Call this when a player disconnects.
+     */
+    public void onPlayerQuit(@Nonnull UUID playerUuid) {
+        // Remove all requests where this player is the target
+        ConcurrentHashMap<UUID, TpaRequest> targetRequests = pendingRequests.remove(playerUuid);
+        if (targetRequests != null) {
+            // Cancel all expiration futures
+            for (TpaRequest request : targetRequests.values()) {
+                request.cancel();
+            }
+        }
+
+        // Remove all requests where this player is the requester
+        for (ConcurrentHashMap<UUID, TpaRequest> requests : pendingRequests.values()) {
+            TpaRequest request = requests.remove(playerUuid);
+            if (request != null) {
+                request.cancel();
+            }
+        }
+
+        // Clean up any empty maps
+        pendingRequests.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+    }
+
+    /**
+     * Shuts down the manager and cancels all pending requests.
+     */
+    public void shutdown() {
+        scheduler.shutdownNow();
+        pendingRequests.clear();
+    }
+
+    /**
+     * Represents a teleport request.
+     */
+    public static class TpaRequest {
+        private final UUID requesterUuid;
+        private final String requesterName;
+        private final String targetName;
+        private final long timestamp;
+        private ScheduledFuture<?> expirationFuture;
+
+        public TpaRequest(UUID requesterUuid, String requesterName, String targetName) {
+            this.requesterUuid = requesterUuid;
+            this.requesterName = requesterName;
+            this.targetName = targetName;
+            this.timestamp = System.currentTimeMillis();
+        }
+
+        public UUID getRequesterUuid() {
+            return requesterUuid;
+        }
+
+        public String getRequesterName() {
+            return requesterName;
+        }
+
+        public String getTargetName() {
+            return targetName;
+        }
+
+        public long getTimestamp() {
+            return timestamp;
+        }
+
+        void setExpirationFuture(ScheduledFuture<?> future) {
+            this.expirationFuture = future;
+        }
+
+        void cancel() {
+            if (expirationFuture != null) {
+                expirationFuture.cancel(false);
+            }
+        }
+    }
+}

@@ -1,0 +1,88 @@
+plugins {
+    id("java-library")
+    id("com.gradleup.shadow") version "9.3.1"
+}
+
+group = findProperty("pluginGroup") as String? ?: "com.nhulston"
+version = findProperty("pluginVersion") as String? ?: "1.1.0"
+description = findProperty("pluginDescription") as String? ?: "Your Essentials for a Hytale server"
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+
+    maven("https://maven.hytale.com/release/")
+}
+
+dependencies {
+    compileOnly("com.hypixel.hytale:Server:latest.release")
+
+    // Common dependencies (will be bundled in JAR)
+    implementation("com.google.code.gson:gson:2.10.1")
+    implementation("org.tomlj:tomlj:1.1.1")
+    implementation("org.jetbrains:annotations:24.1.0")
+    implementation("org.ow2.asm:asm:9.7")
+
+    // Test dependencies
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks {
+    // Configure Java compilation
+    compileJava {
+        options.encoding = Charsets.UTF_8.name()
+        options.release = 25
+    }
+
+    // Configure resource processing
+    processResources {
+        filteringCharset = Charsets.UTF_8.name()
+
+        // Replace placeholders in manifest.json
+        val props = mapOf(
+            "group" to project.group,
+            "version" to project.version,
+            "description" to project.description
+        )
+        inputs.properties(props)
+
+        filesMatching("manifest.json") {
+            expand(props)
+        }
+    }
+
+    // Configure ShadowJar (bundle dependencies)
+    shadowJar {
+        archiveBaseName.set(rootProject.name)
+        archiveClassifier.set("")
+        destinationDirectory.set(layout.buildDirectory.dir("libs"))
+
+        // Relocate dependencies to avoid conflicts
+        relocate("com.google.gson", "com.nhulston.libs.gson")
+        relocate("org.tomlj", "com.nhulston.libs.tomlj")
+        relocate("org.antlr", "com.nhulston.libs.antlr")
+        relocate("com.google.errorprone", "com.nhulston.libs.errorprone")
+        relocate("io.netty", "com.nhulston.libs.netty")
+
+        // Merge service files properly
+        mergeServiceFiles()
+    }
+
+    // Configure tests
+    test {
+        useJUnitPlatform()
+    }
+
+    // Make build depend on shadowJar
+    build {
+        dependsOn(shadowJar)
+    }
+}
+
+// Configure Java toolchain
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(25))
+    }
+}
