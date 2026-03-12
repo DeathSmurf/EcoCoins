@@ -67,6 +67,11 @@ public final class ChangeAllMoneyCommand extends AbstractPlayerCommand {
             return;
         }
 
+        if (!hasAnyRedeemableCoin(player)) {
+            ctx.sendMessage(lang.trMsg(pLang, "command.changeall.no_coins", Map.of()));
+            return;
+        }
+
         timeoutService.executeWithProfile(
                 player,
                 store,
@@ -75,6 +80,18 @@ public final class ChangeAllMoneyCommand extends AbstractPlayerCommand {
                 CommandTimeoutService.TimeoutProfile.CHANGE_ALL,
                 () -> executeNow(store, playerEntityRef, playerRef)
         );
+    }
+
+    private boolean hasAnyRedeemableCoin(Player player) {
+        for (CoinDefinition coin : coins.getCoinsSnapshot()) {
+            if (coin == null || coin.name_item == null || coin.name_item.isBlank() || coin.pay <= 0) {
+                continue;
+            }
+            if (InventoryUtil.countItemId(player.getInventory(), coin.name_item) > 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void executeNow(Store<EntityStore> store,

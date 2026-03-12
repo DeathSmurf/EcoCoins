@@ -96,6 +96,12 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
             return;
         }
 
+        // Validación previa al timer (flujo tipo Essentials):
+        // si no cumple condiciones de compra, no se inicia la espera.
+        if (!canStartPurchase(player, playerRef, pLang, moneyName, amount)) {
+            return;
+        }
+
         timeoutService.executeWithProfile(
                 player,
                 store,
@@ -104,6 +110,47 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
                 CommandTimeoutService.TimeoutProfile.CHANGE,
                 () -> executePurchaseNow(store, playerEntityRef, playerRef, moneyName, amount)
         );
+    }
+
+    private boolean canStartPurchase(Player player,
+                                     PlayerRef playerRef,
+                                     String pLang,
+                                     String moneyName,
+                                     int amount) {
+        Optional<CoinDefinition> coinOpt = coins.findByMoneyName(moneyName);
+        if (coinOpt.isEmpty()) {
+            player.sendMessage(lang.trMsg(pLang, "command.change.not_found", Map.of("moneyName", moneyName)));
+            return false;
+        }
+
+        CoinDefinition coin = coinOpt.get();
+        if (coin.name_item == null || coin.name_item.isBlank()) {
+            player.sendMessage(Message.raw("[EcoCoins] Coin inválida: falta name_item en JSON."));
+            return false;
+        }
+
+        if (!economy.isAvailable()) {
+            player.sendMessage(lang.trMsg(pLang, "command.change.economy_unavailable", Map.of()));
+            return false;
+        }
+
+        double cost = coin.pay * (double) amount;
+        if (cost <= 0.0) {
+            player.sendMessage(lang.trMsg(pLang, "command.change.invalid_pay", Map.of()));
+            return false;
+        }
+
+        if (!InventoryUtil.canAddItemId(player.getInventory(), coin.name_item, amount)) {
+            player.sendMessage(lang.trMsg(pLang, "command.change.inventory_full", Map.of()));
+            return false;
+        }
+
+        if (!economy.has(playerRef.getUuid(), cost)) {
+            player.sendMessage(lang.trMsg(pLang, "command.change.not_enough_money", Map.of("amount", amount, "cost", cost)));
+            return false;
+        }
+
+        return true;
     }
 
     private void executePurchaseNow(Store<EntityStore> store,

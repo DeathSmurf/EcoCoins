@@ -30,6 +30,7 @@ public final class CommandTimeoutService {
 
     public static final String PERM_VIP = "ecocoins.vip";
     public static final String PERM_TIMEPASS = "ecocoins.timepass";
+    public static final String PERM_BYPASS = "ecocoins.bypass";
 
     public enum TimeoutProfile {
         CHANGE("/change", 5, 3),
@@ -195,19 +196,32 @@ public final class CommandTimeoutService {
     private TimeoutTier resolveTimeoutTier(PlayerRef playerRef) {
         UUID uuid = playerRef.getUuid();
         Set<String> groups = getGroupsSafe(uuid);
-        boolean onlyDefaultGroup = groups.isEmpty() || (groups.size() == 1 && groups.contains("default"));
+        Set<String> lowerGroups = groups.stream().map(String::toLowerCase).collect(java.util.stream.Collectors.toSet());
+        boolean hasEcoGroup = lowerGroups.contains("ecocoins.timepass")
+                || lowerGroups.contains("ecocoins.bypass")
+                || lowerGroups.contains("timepass")
+                || lowerGroups.contains("bypass")
+                || lowerGroups.contains("ecocoins.vip")
+                || lowerGroups.contains("vip");
+        boolean adminLikeOnly = !hasEcoGroup && (
+                lowerGroups.contains("admin")
+                        || lowerGroups.contains("op")
+                        || lowerGroups.contains("operator")
+                        || lowerGroups.contains("owner")
+        );
 
-        if (groups.contains("ecocoins.timepass") || groups.contains("timepass")) {
+        if (lowerGroups.contains("ecocoins.timepass") || lowerGroups.contains("ecocoins.bypass")
+                || lowerGroups.contains("timepass") || lowerGroups.contains("bypass")) {
             return TimeoutTier.TIMEPASS;
         }
-        if (!onlyDefaultGroup && hasPermissionSafe(uuid, PERM_TIMEPASS)) {
+        if (!adminLikeOnly && (hasPermissionSafe(uuid, PERM_TIMEPASS) || hasPermissionSafe(uuid, PERM_BYPASS))) {
             return TimeoutTier.TIMEPASS;
         }
 
-        if (groups.contains("ecocoins.vip") || groups.contains("vip")) {
+        if (lowerGroups.contains("ecocoins.vip") || lowerGroups.contains("vip")) {
             return TimeoutTier.VIP;
         }
-        if (!onlyDefaultGroup && hasPermissionSafe(uuid, PERM_VIP)) {
+        if (!adminLikeOnly && hasPermissionSafe(uuid, PERM_VIP)) {
             return TimeoutTier.VIP;
         }
 
