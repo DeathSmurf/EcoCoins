@@ -31,6 +31,10 @@ public final class CommandTimeoutService {
     public static final String PERM_VIP = "ecocoins.vip";
     public static final String PERM_TIMEPASS = "ecocoins.timepass";
     public static final String PERM_BYPASS = "ecocoins.bypass";
+    private static final String KEY_TIMEOUT_ALREADY_PENDING = "command.timeout.already_pending";
+    private static final String KEY_TIMEOUT_WAITING = "command.timeout.waiting";
+    private static final String KEY_TIMEOUT_MOVED_CANCELLED = "command.timeout.cancelled_moved";
+    private static final String KEY_TIMEOUT_ORIGIN_UNAVAILABLE = "command.timeout.origin_unavailable";
 
     public enum TimeoutProfile {
         CHANGE("/change", 5, 3),
@@ -62,10 +66,12 @@ public final class CommandTimeoutService {
     private enum TimeoutTier { DEFAULT, VIP, TIMEPASS }
 
     private final HytaleLogger logger;
+    private final LanguageManager lang;
     private final Map<UUID, PendingCommand> pendingByPlayer = new ConcurrentHashMap<>();
 
-    public CommandTimeoutService(HytaleLogger logger) {
+    public CommandTimeoutService(HytaleLogger logger, LanguageManager lang) {
         this.logger = logger;
+        this.lang = lang;
     }
 
     public void executeWithProfile(Player player,
@@ -117,18 +123,21 @@ public final class CommandTimeoutService {
 
         BlockPos origin = resolveBlockPos(store, playerEntityRef);
         if (origin == null) {
-            player.sendMessage(Message.raw("[EcoCoins] No pude resolver tu bloque actual para iniciar espera."));
+            player.sendMessage(trForPlayer(playerRef, KEY_TIMEOUT_ORIGIN_UNAVAILABLE, Map.of()));
             return;
         }
 
         PendingCommand pending = new PendingCommand(origin, action, waitSeconds);
         PendingCommand existing = pendingByPlayer.putIfAbsent(playerRef.getUuid(), pending);
         if (existing != null) {
-            player.sendMessage(Message.raw("[EcoCoins] Ya tienes un comando en espera. Por favor espera a que termine."));
+            player.sendMessage(trForPlayer(playerRef, KEY_TIMEOUT_ALREADY_PENDING, Map.of()));
             return;
         }
 
-        player.sendMessage(Message.raw("[EcoCoins] Espera " + waitSeconds + "s para ejecutar " + commandLabel + ". No salgas del bloque actual."));
+        player.sendMessage(trForPlayer(playerRef, KEY_TIMEOUT_WAITING, Map.of(
+                "seconds", waitSeconds,
+                "command", commandLabel
+        )));
     }
 
     public boolean hasPending(UUID playerUuid) {
@@ -154,7 +163,8 @@ public final class CommandTimeoutService {
             PendingCommand removed = pendingByPlayer.remove(playerUuid);
             if (removed != null) {
                 buffer.run(store -> sendMessageIfOnline(store, currentRef,
-                        Message.raw("[EcoCoins] Comando cancelado: saliste del bloque donde lo activaste.")));
+                        KEY_TIMEOUT_MOVED_CANCELLED,
+                        Map.of()));
             }
             return;
         }
@@ -250,12 +260,25 @@ public final class CommandTimeoutService {
 
     private void sendMessageIfOnline(Store<EntityStore> store,
                                      Ref<EntityStore> playerEntityRef,
-                                     Message message) {
+                                     String key,
+                                     Map<String, Object> vars) {
         if (store == null || playerEntityRef == null || !playerEntityRef.isValid()) return;
+
+        PlayerRef playerRef = store.getComponent(playerEntityRef, PlayerRef.getComponentType());
+        if (playerRef == null) return;
+
         Player online = store.getComponent(playerEntityRef, Player.getComponentType());
         if (online != null) {
-            online.sendMessage(message);
+            online.sendMessage(trForPlayer(playerRef, key, vars));
         }
+    }
+
+    private Message trForPlayer(PlayerRef playerRef, String key, Map<String, Object> vars) {
+        if (lang == null || playerRef == null) {
+            return Message.raw("[EcoCoins] " + key);
+        }
+        String resolved = lang.resolveLang(playerRef.getLanguage());
+        return lang.trMsg(resolved, key, vars);
     }
 
     private BlockPos resolveBlockPos(Store<EntityStore> store,

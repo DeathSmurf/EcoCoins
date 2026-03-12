@@ -67,7 +67,7 @@ public final class EcoCoins extends JavaPlugin {
             this.balanceHudService = new BalanceHudService(economy);
             this.coinRedeemService = new CoinRedeemService(getLogger(), coinManager, economy, languageManager, balanceHudService, REDEEM_DEBUG_LOGS);
             this.coinPickupSoundService = new CoinPickupSoundService(getLogger(), coinManager);
-            this.commandTimeoutService = new CommandTimeoutService(getLogger());
+            this.commandTimeoutService = new CommandTimeoutService(getLogger(), languageManager);
 
             HudHelper.init();
             registerCoinInteractionType();
