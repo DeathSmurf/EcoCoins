@@ -11,8 +11,8 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.SoundCategory;
 import com.hypixel.hytale.server.core.Message;
-import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.asset.type.soundevent.config.SoundEvent;
+import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.command.system.basecommands.AbstractPlayerCommand;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
@@ -25,9 +25,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public final class ChangeAllMoneyCommand extends AbstractPlayerCommand {
+/**
+ * Convierte a dinero virtual únicamente las monedas EcoCoins en los slots 1..9 (hotbar).
+ */
+public final class ChangeHandMoneyCommand extends AbstractPlayerCommand {
 
-    public static final String PERM_CHANGEALL_USE = "ecocoins.command.changeall.use";
+    public static final String PERM_CHANGEHAND_USE = "ecocoins.command.changehand.use";
     private static final String REDEEM_SOUND_EVENT_ID = "SFX_EcoCoins_Redeem";
 
     private final LanguageManager lang;
@@ -36,15 +39,18 @@ public final class ChangeAllMoneyCommand extends AbstractPlayerCommand {
     private final BalanceHudService hudService;
     private final CommandTimeoutService timeoutService;
 
-    public ChangeAllMoneyCommand(LanguageManager lang, CoinManager coins, TheEconomyService economy, BalanceHudService hudService, CommandTimeoutService timeoutService) {
-        super("changeall", "Convierte todas tus monedas físicas EcoCoins a dinero virtual.", false);
+    public ChangeHandMoneyCommand(LanguageManager lang,
+                                  CoinManager coins,
+                                  TheEconomyService economy,
+                                  BalanceHudService hudService,
+                                  CommandTimeoutService timeoutService) {
+        super("changehand", "Convierte monedas EcoCoins solo de la hotbar (slots 1-9).", false);
         this.lang = lang;
         this.coins = coins;
         this.economy = economy;
         this.hudService = hudService;
         this.timeoutService = timeoutService;
-
-        this.requirePermission(PERM_CHANGEALL_USE);
+        this.requirePermission(PERM_CHANGEHAND_USE);
     }
 
     @Override
@@ -63,12 +69,12 @@ public final class ChangeAllMoneyCommand extends AbstractPlayerCommand {
         String pLang = lang.resolveLang(playerRef.getLanguage());
 
         if (!economy.isAvailable()) {
-            ctx.sendMessage(lang.trMsg(pLang, "command.changeall.economy_unavailable", Map.of()));
+            ctx.sendMessage(lang.trMsg(pLang, "command.changehand.economy_unavailable", Map.of()));
             return;
         }
 
-        if (!hasAnyRedeemableCoin(player)) {
-            ctx.sendMessage(lang.trMsg(pLang, "command.changeall.no_coins", Map.of()));
+        if (!hasAnyRedeemableCoinInHotbar(player)) {
+            ctx.sendMessage(lang.trMsg(pLang, "command.changehand.no_coins", Map.of()));
             return;
         }
 
@@ -77,17 +83,17 @@ public final class ChangeAllMoneyCommand extends AbstractPlayerCommand {
                 store,
                 playerEntityRef,
                 playerRef,
-                CommandTimeoutService.TimeoutProfile.CHANGE_ALL,
+                CommandTimeoutService.TimeoutProfile.CHANGE_HAND,
                 () -> executeNow(store, playerEntityRef, playerRef)
         );
     }
 
-    private boolean hasAnyRedeemableCoin(Player player) {
+    private boolean hasAnyRedeemableCoinInHotbar(Player player) {
         for (CoinDefinition coin : coins.getCoinsSnapshot()) {
             if (coin == null || coin.name_item == null || coin.name_item.isBlank() || coin.pay <= 0) {
                 continue;
             }
-            if (InventoryUtil.countItemId(player.getInventory(), coin.name_item) > 0) {
+            if (InventoryUtil.countItemIdInHotbar(player.getInventory(), coin.name_item) > 0) {
                 return true;
             }
         }
@@ -105,7 +111,7 @@ public final class ChangeAllMoneyCommand extends AbstractPlayerCommand {
         String pLang = lang.resolveLang(playerRef.getLanguage());
 
         if (!economy.isAvailable()) {
-            player.sendMessage(lang.trMsg(pLang, "command.changeall.economy_unavailable", Map.of()));
+            player.sendMessage(lang.trMsg(pLang, "command.changehand.economy_unavailable", Map.of()));
             return;
         }
 
@@ -119,12 +125,12 @@ public final class ChangeAllMoneyCommand extends AbstractPlayerCommand {
                 continue;
             }
 
-            int amount = InventoryUtil.countItemId(player.getInventory(), coin.name_item);
+            int amount = InventoryUtil.countItemIdInHotbar(player.getInventory(), coin.name_item);
             if (amount <= 0) {
                 continue;
             }
 
-            boolean removed = InventoryUtil.removeItemId(player.getInventory(), coin.name_item, amount);
+            boolean removed = InventoryUtil.removeItemIdFromHotbar(player.getInventory(), coin.name_item, amount);
             if (!removed) {
                 continue;
             }
@@ -135,7 +141,7 @@ public final class ChangeAllMoneyCommand extends AbstractPlayerCommand {
         }
 
         if (totalCoins <= 0 || totalPay <= 0.0) {
-            player.sendMessage(lang.trMsg(pLang, "command.changeall.no_coins", Map.of()));
+            player.sendMessage(lang.trMsg(pLang, "command.changehand.no_coins", Map.of()));
             return;
         }
 
@@ -148,20 +154,20 @@ public final class ChangeAllMoneyCommand extends AbstractPlayerCommand {
                 InventoryUtil.addItemId(player.getInventory(), batch.itemId(), batch.amount());
             }
 
-            player.sendMessage(lang.trMsg(pLang, "command.changeall.deposit_failed", Map.of()));
+            player.sendMessage(lang.trMsg(pLang, "command.changehand.deposit_failed", Map.of()));
             return;
         }
 
+        player.sendInventory();
         playRedeemSound(player);
 
-        player.sendMessage(lang.trMsg(pLang, "command.changeall.success", Map.of(
+        player.sendMessage(lang.trMsg(pLang, "command.changehand.success", Map.of(
                 "coins", totalCoins,
                 "pay", totalPay
         )));
 
         hudService.updateBalance(player, playerRef);
     }
-
 
     private void playRedeemSound(Player player) {
         try {
@@ -177,7 +183,7 @@ public final class ChangeAllMoneyCommand extends AbstractPlayerCommand {
 
             SoundUtil.playSoundEvent2dToPlayer(player.getPlayerRef(), soundEventIndex, SoundCategory.SFX);
         } catch (Throwable ignored) {
-            // El sonido es best-effort: no debe romper /changeall.
+            // El sonido es best-effort: no debe romper /changehand.
         }
     }
 

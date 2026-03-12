@@ -1,6 +1,7 @@
 package com.ecocoins;
 
 import com.ecocoins.commands.ChangeAllMoneyCommand;
+import com.ecocoins.commands.ChangeHandMoneyCommand;
 import com.ecocoins.commands.ChangeHudOffCommand;
 import com.ecocoins.commands.ChangeHudOnCommand;
 import com.ecocoins.commands.ChangeMoneyCommand;
@@ -11,6 +12,7 @@ import com.ecocoins.core.CommandTimeoutService;
 import com.ecocoins.core.ConfigBootstrap;
 import com.ecocoins.core.LanguageManager;
 import com.ecocoins.core.TheEconomyService;
+import com.ecocoins.events.CommandTimeoutMovementEvent;
 import com.ecocoins.hud.BalanceHudService;
 import com.ecocoins.interactions.CoinRedeemInteraction;
 import com.ecocoins.util.HudHelper;
@@ -66,7 +68,7 @@ public final class EcoCoins extends JavaPlugin {
             this.balanceHudService = new BalanceHudService(economy);
             this.coinRedeemService = new CoinRedeemService(getLogger(), coinManager, economy, languageManager, balanceHudService, REDEEM_DEBUG_LOGS);
             this.coinPickupSoundService = new CoinPickupSoundService(getLogger(), coinManager);
-            this.commandTimeoutService = new CommandTimeoutService(getLogger());
+            this.commandTimeoutService = new CommandTimeoutService(getLogger(), languageManager);
 
             HudHelper.init();
             registerCoinInteractionType();
@@ -90,6 +92,7 @@ public final class EcoCoins extends JavaPlugin {
 
             getCommandRegistry().registerCommand(new ChangeMoneyCommand(languageManager, coinManager, economy, balanceHudService, commandTimeoutService));
             getCommandRegistry().registerCommand(new ChangeAllMoneyCommand(languageManager, coinManager, economy, balanceHudService, commandTimeoutService));
+            getCommandRegistry().registerCommand(new ChangeHandMoneyCommand(languageManager, coinManager, economy, balanceHudService, commandTimeoutService));
             getCommandRegistry().registerCommand(new ChangeHudOffCommand(balanceHudService));
             getCommandRegistry().registerCommand(new ChangeHudOnCommand(balanceHudService));
 
@@ -98,7 +101,7 @@ public final class EcoCoins extends JavaPlugin {
                             + " langs=" + languageManager.countLanguages()
                             + " theEconomy=" + economy.isAvailable()
                             + " interactionTrigger=" + COIN_INTERACTION_TRIGGER
-                            + " (comandos: /change /changeall /changeoff /changeon)"
+                            + " (comandos: /change /changeall /changehand /changeoff /changeon)"
             );
 
         } catch (Throwable t) {
@@ -112,6 +115,9 @@ public final class EcoCoins extends JavaPlugin {
 
     @Override
     protected void start() {
+        if (commandTimeoutService != null) {
+            new CommandTimeoutMovementEvent(commandTimeoutService).register(getEntityStoreRegistry());
+        }
         getLogger().at(Level.INFO).log("[EcoCoins] start()... interactionTrigger=" + COIN_INTERACTION_TRIGGER);
         getLogger().at(Level.INFO).log("[EcoCoins] start() OK.");
     }
