@@ -38,6 +38,7 @@ public final class CommandTimeoutService {
 
     public enum TimeoutProfile {
         CHANGE("/change", 5, 3),
+        CHANGE_HAND("/changehand", 15, 7),
         CHANGE_ALL("/changeall", 15, 7);
 
         private final String commandLabel;
