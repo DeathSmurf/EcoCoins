@@ -21,5 +21,9 @@
   "command.changeall.success": "&aCanje total exitoso: &e{coins} Monedas &7> &6+{pay} Coins a tu billetera digital",
   "command.changeall.no_coins": "&cNo tienes monedas EcoCoins en tu inventario para canjear.",
   "command.changeall.economy_unavailable": "&cTheEconomy no está disponible; no puedo depositar balance.",
-  "command.changeall.deposit_failed": "&cNo pude depositar el canje total en TheEconomy. Se revirtió el inventario."
+  "command.changeall.deposit_failed": "&cNo pude depositar el canje total en TheEconomy. Se revirtió el inventario.",
+  "command.timeout.origin_unavailable": "&cNo pude resolver tu bloque actual para iniciar la espera.",
+  "command.timeout.already_pending": "&cYa tienes un comando en espera. Por favor espera a que termine.",
+  "command.timeout.waiting": "&eEspera &6{seconds}s &epara ejecutar &6{command}&e. No salgas del bloque actual.",
+  "command.timeout.cancelled_moved": "&cComando cancelado: saliste del bloque donde lo activaste."
 }

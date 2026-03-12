@@ -67,20 +67,34 @@ public final class ChangeAllMoneyCommand extends AbstractPlayerCommand {
             return;
         }
 
-        timeoutService.executeWithTimeout(
+        if (!hasAnyRedeemableCoin(player)) {
+            ctx.sendMessage(lang.trMsg(pLang, "command.changeall.no_coins", Map.of()));
+            return;
+        }
+
+        timeoutService.executeWithProfile(
                 player,
                 store,
                 playerEntityRef,
                 playerRef,
-                "/changeall",
-                15,
-                7,
-                () -> executeNow(ctx, store, playerEntityRef, playerRef)
+                CommandTimeoutService.TimeoutProfile.CHANGE_ALL,
+                () -> executeNow(store, playerEntityRef, playerRef)
         );
     }
 
-    private void executeNow(CommandContext ctx,
-                            Store<EntityStore> store,
+    private boolean hasAnyRedeemableCoin(Player player) {
+        for (CoinDefinition coin : coins.getCoinsSnapshot()) {
+            if (coin == null || coin.name_item == null || coin.name_item.isBlank() || coin.pay <= 0) {
+                continue;
+            }
+            if (InventoryUtil.countItemId(player.getInventory(), coin.name_item) > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void executeNow(Store<EntityStore> store,
                             Ref<EntityStore> playerEntityRef,
                             PlayerRef playerRef) {
         Player player = store.getComponent(playerEntityRef, Player.getComponentType());
@@ -91,7 +105,7 @@ public final class ChangeAllMoneyCommand extends AbstractPlayerCommand {
         String pLang = lang.resolveLang(playerRef.getLanguage());
 
         if (!economy.isAvailable()) {
-            ctx.sendMessage(lang.trMsg(pLang, "command.changeall.economy_unavailable", Map.of()));
+            player.sendMessage(lang.trMsg(pLang, "command.changeall.economy_unavailable", Map.of()));
             return;
         }
 
@@ -121,7 +135,7 @@ public final class ChangeAllMoneyCommand extends AbstractPlayerCommand {
         }
 
         if (totalCoins <= 0 || totalPay <= 0.0) {
-            ctx.sendMessage(lang.trMsg(pLang, "command.changeall.no_coins", Map.of()));
+            player.sendMessage(lang.trMsg(pLang, "command.changeall.no_coins", Map.of()));
             return;
         }
 
@@ -134,13 +148,13 @@ public final class ChangeAllMoneyCommand extends AbstractPlayerCommand {
                 InventoryUtil.addItemId(player.getInventory(), batch.itemId(), batch.amount());
             }
 
-            ctx.sendMessage(lang.trMsg(pLang, "command.changeall.deposit_failed", Map.of()));
+            player.sendMessage(lang.trMsg(pLang, "command.changeall.deposit_failed", Map.of()));
             return;
         }
 
         playRedeemSound(player);
 
-        ctx.sendMessage(lang.trMsg(pLang, "command.changeall.success", Map.of(
+        player.sendMessage(lang.trMsg(pLang, "command.changeall.success", Map.of(
                 "coins", totalCoins,
                 "pay", totalPay
         )));
