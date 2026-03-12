@@ -96,20 +96,17 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
             return;
         }
 
-        timeoutService.executeWithTimeout(
+        timeoutService.executeWithProfile(
                 player,
                 store,
                 playerEntityRef,
                 playerRef,
-                "/change",
-                5,
-                3,
-                () -> executePurchaseNow(ctx, store, playerEntityRef, playerRef, moneyName, amount)
+                CommandTimeoutService.TimeoutProfile.CHANGE,
+                () -> executePurchaseNow(store, playerEntityRef, playerRef, moneyName, amount)
         );
     }
 
-    private void executePurchaseNow(CommandContext ctx,
-                                    Store<EntityStore> store,
+    private void executePurchaseNow(Store<EntityStore> store,
                                     Ref<EntityStore> playerEntityRef,
                                     PlayerRef playerRef,
                                     String moneyName,
@@ -123,54 +120,54 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
 
         Optional<CoinDefinition> coinOpt = coins.findByMoneyName(moneyName);
         if (coinOpt.isEmpty()) {
-            ctx.sendMessage(lang.trMsg(pLang, "command.change.not_found", Map.of("moneyName", moneyName)));
+            player.sendMessage(lang.trMsg(pLang, "command.change.not_found", Map.of("moneyName", moneyName)));
             return;
         }
 
         CoinDefinition coin = coinOpt.get();
         if (coin.name_item == null || coin.name_item.isBlank()) {
-            ctx.sendMessage(Message.raw("[EcoCoins] Coin inválida: falta name_item en JSON."));
+            player.sendMessage(Message.raw("[EcoCoins] Coin inválida: falta name_item en JSON."));
             return;
         }
 
         double cost = coin.pay * (double) amount;
 
         if (!economy.isAvailable()) {
-            ctx.sendMessage(lang.trMsg(pLang, "command.change.economy_unavailable", Map.of()));
+            player.sendMessage(lang.trMsg(pLang, "command.change.economy_unavailable", Map.of()));
             return;
         }
 
         if (cost <= 0.0) {
-            ctx.sendMessage(lang.trMsg(pLang, "command.change.invalid_pay", Map.of()));
+            player.sendMessage(lang.trMsg(pLang, "command.change.invalid_pay", Map.of()));
             return;
         }
 
         UUID uuid = playerRef.getUuid();
 
         if (!InventoryUtil.canAddItemId(player.getInventory(), coin.name_item, amount)) {
-            ctx.sendMessage(lang.trMsg(pLang, "command.change.inventory_full", Map.of()));
+            player.sendMessage(lang.trMsg(pLang, "command.change.inventory_full", Map.of()));
             return;
         }
 
         if (!economy.has(uuid, cost)) {
-            ctx.sendMessage(lang.trMsg(pLang, "command.change.not_enough_money", Map.of("amount", amount, "cost", cost)));
+            player.sendMessage(lang.trMsg(pLang, "command.change.not_enough_money", Map.of("amount", amount, "cost", cost)));
             return;
         }
 
         boolean withdrawn = economy.remove(uuid, cost);
         if (!withdrawn) {
-            ctx.sendMessage(lang.trMsg(pLang, "command.change.withdraw_failed", Map.of()));
+            player.sendMessage(lang.trMsg(pLang, "command.change.withdraw_failed", Map.of()));
             return;
         }
 
         boolean added = InventoryUtil.addItemId(player.getInventory(), coin.name_item, amount);
         if (!added) {
             economy.add(uuid, cost);
-            ctx.sendMessage(lang.trMsg(pLang, "command.change.inventory_full", Map.of()));
+            player.sendMessage(lang.trMsg(pLang, "command.change.inventory_full", Map.of()));
             return;
         }
 
-        ctx.sendMessage(lang.trMsg(pLang, "command.change.success", Map.of(
+        player.sendMessage(lang.trMsg(pLang, "command.change.success", Map.of(
                 "amount", amount,
                 "moneyName", coin.money_name != null ? coin.money_name.primary : moneyName,
                 "cost", cost
