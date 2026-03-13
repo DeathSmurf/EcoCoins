@@ -1,5 +1,5 @@
 {
-  "command.change.success": "&aPurchase successful: &e{amount} &7x &6{moneyName} &7(-&e{cost}&7)",
+  "command.change.success": "&aPurchase successful: &e{amount} &7x &6{primary} &7(-&e{cost}&7)",
   "command.change.not_enough_money": "&cYou don't have enough money. &7Cost: &e{cost}",
   "command.change.inventory_full": "&cYou don't have inventory space.",
   "command.change.not_found": "&cThe coin {moneyName} does not exist.",
@@ -14,7 +14,7 @@
   "command.change.withdraw_failed": "&cI could not withdraw balance from TheEconomy.",
   "command.change.list.usage": "&7Use &e/change <coin> <amount> &7to exchange.",
   "command.change.list.header": "&6Available coins list:",
-  "command.change.list.entry": "&7- (&e{pay} Coins&7) &f{primary}&7, &f{aliases}&7:",
+  "command.change.list.entry": "&7- (&e{pay} Coins&7) &f{primary}&7, &f{aliases}&7: &f{lang_moneyName}",
   "command.change.list.no_aliases": "no aliases",
   "command.changeon.success": "&aBalance HUD enabled.",
   "command.changeoff.success": "&eBalance HUD disabled. Use &6/changeon &eto show it again.",
