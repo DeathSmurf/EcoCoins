@@ -29,5 +29,9 @@
   "command.timeout.origin_unavailable": "&cNo pude resolver tu bloque actual para iniciar la espera.",
   "command.timeout.already_pending": "&cYa tienes un comando en espera. Por favor espera a que termine.",
   "command.timeout.waiting": "&eEspera &6{seconds}s &epara ejecutar &6{command}&e. No salgas del bloque actual.",
-  "command.timeout.cancelled_moved": "&cComando cancelado: saliste del bloque donde lo activaste."
+  "command.timeout.cancelled_moved": "&cComando cancelado: saliste del bloque donde lo activaste.",
+  "command.ecocoins.usage": "&7Uso: &e/ecocoins reload",
+  "command.ecocoins.reload.success": "&aEcoCoins recargado correctamente. &7Monedas: &e{coins}&7, Idiomas: &e{langs}",
+  "command.ecocoins.reload.assets_restart_required": "&eAviso: &7Los assets (&fsonidos, texturas, UI&7) no se recargan en caliente. Requiere reiniciar el servidor.",
+  "command.ecocoins.reload.failed": "&cNo se pudo recargar EcoCoins. Revisa la consola del servidor."
 }
