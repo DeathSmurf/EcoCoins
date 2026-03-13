@@ -1,5 +1,5 @@
 {
-  "command.change.success": "&aCompra exitosa: &e{amount} &7x &6{moneyName} &7(-&e{cost}&7)",
+  "command.change.success": "&aCompra exitosa: &e{amount} &7x &6{primary} &7(-&e{cost}&7)",
   "command.change.not_enough_money": "&cNo tienes suficiente dinero. &7Costo: &e{cost}",
   "command.change.inventory_full": "&cNo tienes espacio en el inventario.",
   "command.change.not_found": "&cLa moneda {moneyName} no existe.",
@@ -14,7 +14,7 @@
   "command.change.withdraw_failed": "&cNo pude retirar saldo de TheEconomy.",
   "command.change.list.usage": "&7Usa &e/change <moneda> <cantidad> &7para intercambiar.",
   "command.change.list.header": "&6Lista de monedas disponibles:",
-  "command.change.list.entry": "&7- (&e{pay} Coins&7) &f{primary}&7, &f{aliases}&7:",
+  "command.change.list.entry": "&7- (&e{pay} Coins&7) &f{primary}&7, &f{aliases}&7: &f{lang_moneyName}",
   "command.change.list.no_aliases": "sin aliases",
   "command.changeon.success": "&aHUD de balance activado.",
   "command.changeoff.success": "&eHUD de balance desactivado. Usa &6/changeon &epara volver a mostrarlo.",
