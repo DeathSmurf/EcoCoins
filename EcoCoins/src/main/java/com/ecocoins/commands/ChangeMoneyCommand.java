@@ -215,12 +215,24 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
         }
 
         String primaryMoneyName = coin.money_name != null ? coin.money_name.primary : moneyName;
-        player.sendMessage(lang.trMsg(pLang, "command.change.success", Map.of(
+        String itemId = (coin.name_item == null || coin.name_item.isBlank()) ? "?" : coin.name_item;
+
+        String successTemplate = lang.tr(pLang, "command.change.success", Map.of(
                 "amount", amount,
                 "primary", primaryMoneyName,
-                "lang_moneyName", primaryMoneyName,
                 "cost", cost
-        )));
+        ));
+        String moneyNamePlaceholder = "{lang_moneyName}";
+        int moneyNameIndex = successTemplate.indexOf(moneyNamePlaceholder);
+
+        Message itemName = Message.translation("server.items." + itemId + ".name");
+        if (moneyNameIndex < 0) {
+            player.sendMessage(lang.rawToMsg(successTemplate));
+        } else {
+            String before = successTemplate.substring(0, moneyNameIndex);
+            String after = successTemplate.substring(moneyNameIndex + moneyNamePlaceholder.length());
+            player.sendMessage(Message.join(lang.rawToMsg(before), itemName, lang.rawToMsg(after)));
+        }
 
         hudService.updateBalance(player, playerRef);
     }
