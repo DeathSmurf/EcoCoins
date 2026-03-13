@@ -21,5 +21,17 @@
   "command.changeall.success": "&aBulk redeem successful: &e{coins} Money &7> &6+{pay} Coins",
   "command.changeall.no_coins": "&cYou don't have EcoCoins in your inventory to redeem.",
   "command.changeall.economy_unavailable": "&cTheEconomy is not available; I cannot deposit balance.",
-  "command.changeall.deposit_failed": "&cI could not deposit the bulk redeem into TheEconomy. Inventory was rolled back."
+  "command.changeall.deposit_failed": "&cI could not deposit the bulk redeem into TheEconomy. Inventory was rolled back.",
+  "command.changehand.success": "&aHotbar redeem successful: &e{coins} Coins &7> &6+{pay} Coins to your digital wallet",
+  "command.changehand.no_coins": "&cYou don't have EcoCoins in slots 1-9 to redeem.",
+  "command.changehand.economy_unavailable": "&cTheEconomy is not available; I cannot deposit balance.",
+  "command.changehand.deposit_failed": "&cI could not deposit the hotbar redeem into TheEconomy. Inventory was rolled back.",
+  "command.timeout.origin_unavailable": "&cI couldn't resolve your current block to start the wait.",
+  "command.timeout.already_pending": "&cYou already have a command in progress. Please wait for it to finish.",
+  "command.timeout.waiting": "&eWait &6{seconds}s &eto execute &6{command}&e. Do not leave your current block.",
+  "command.timeout.cancelled_moved": "&cCommand cancelled: you left the block where you started it.",
+  "command.ecocoins.usage": "&7Usage: &e/ecocoins reload",
+  "command.ecocoins.reload.success": "&aEcoCoins reloaded successfully. &7Coins: &e{coins}&7, Languages: &e{langs}",
+  "command.ecocoins.reload.assets_restart_required": "&eNotice: &7Assets (&fsounds, textures, UI&7) are not hot-reloaded. A server restart is required.",
+  "command.ecocoins.reload.failed": "&cFailed to reload EcoCoins. Check the server console."
 }

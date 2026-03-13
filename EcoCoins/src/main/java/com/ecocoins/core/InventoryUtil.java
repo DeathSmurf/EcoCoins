@@ -10,6 +10,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public final class InventoryUtil {
 
+    private static final short HOTBAR_START_SLOT = 0;
+    private static final short HOTBAR_END_SLOT = 8;
+
     private InventoryUtil() {}
 
     public static int countItemId(Inventory inv, String itemId) {
@@ -79,6 +82,55 @@ public final class InventoryUtil {
         if (amount <= 0) return true;
         ItemContainer all = inv.getCombinedEverything();
         return all.canAddItemStack(new ItemStack(itemId, amount));
+    }
+
+    public static int countItemIdInHotbar(Inventory inv, String itemId) {
+        if (inv == null || itemId == null || itemId.isBlank()) return 0;
+
+        ItemContainer hotbar = inv.getHotbar();
+        AtomicInteger total = new AtomicInteger(0);
+        for (short slot = HOTBAR_START_SLOT; slot <= HOTBAR_END_SLOT; slot++) {
+            ItemStack stack = hotbar.getItemStack(slot);
+            if (stack == null || stack.isEmpty()) continue;
+            if (matchesItemId(resolveItemId(stack), itemId)) {
+                total.addAndGet(stack.getQuantity());
+            }
+        }
+        return total.get();
+    }
+
+    /**
+     * Remueve únicamente desde hotbar (slots 1..9 para el jugador, 0..8 interno).
+     */
+    public static boolean removeItemIdFromHotbar(Inventory inv, String itemId, int amount) {
+        if (inv == null || itemId == null || itemId.isBlank()) return false;
+        if (amount <= 0) return true;
+
+        ItemContainer hotbar = inv.getHotbar();
+        int available = countItemIdInHotbar(inv, itemId);
+        if (available < amount) return false;
+
+        int remaining = amount;
+        for (short slot = HOTBAR_START_SLOT; slot <= HOTBAR_END_SLOT && remaining > 0; slot++) {
+            ItemStack stack = hotbar.getItemStack(slot);
+            if (stack == null || stack.isEmpty()) continue;
+
+            String stackId = resolveItemId(stack);
+            if (!matchesItemId(stackId, itemId)) continue;
+
+            int qty = stack.getQuantity();
+            int take = Math.min(qty, remaining);
+
+            if (take >= qty) {
+                hotbar.setItemStackForSlot(slot, ItemStack.EMPTY);
+            } else {
+                String resolvedId = stackId != null ? stackId : itemId;
+                hotbar.setItemStackForSlot(slot, new ItemStack(resolvedId, qty - take));
+            }
+            remaining -= take;
+        }
+
+        return remaining <= 0;
     }
 
 
