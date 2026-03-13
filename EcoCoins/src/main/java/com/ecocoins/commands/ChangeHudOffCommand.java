@@ -1,5 +1,6 @@
 package com.ecocoins.commands;
 
+import com.ecocoins.core.LanguageManager;
 import com.ecocoins.hud.BalanceHudService;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
@@ -15,10 +16,12 @@ public final class ChangeHudOffCommand extends AbstractPlayerCommand {
 
     public static final String PERM_CHANGEOFF_USE = "ecocoins.command.changeoff.use";
 
+    private final LanguageManager lang;
     private final BalanceHudService hudService;
 
-    public ChangeHudOffCommand(BalanceHudService hudService) {
+    public ChangeHudOffCommand(LanguageManager lang, BalanceHudService hudService) {
         super("changeoff", "Oculta el HUD de balance de EcoCoins.", false);
+        this.lang = lang;
         this.hudService = hudService;
         this.requirePermission(PERM_CHANGEOFF_USE);
     }
@@ -35,7 +38,9 @@ public final class ChangeHudOffCommand extends AbstractPlayerCommand {
             return;
         }
 
+        String pLang = lang.resolveLang(playerRef.getLanguage());
+
         hudService.hide(player, playerRef);
-        ctx.sendMessage(Message.raw("[EcoCoins] HUD de balance desactivado. Usa /changeon para volver a mostrarlo."));
+        ctx.sendMessage(lang.trMsg(pLang, "command.changeoff.success", java.util.Map.of()));
     }
 }

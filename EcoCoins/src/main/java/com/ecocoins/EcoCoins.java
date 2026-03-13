@@ -94,8 +94,8 @@ public final class EcoCoins extends JavaPlugin {
             getCommandRegistry().registerCommand(new ChangeMoneyCommand(languageManager, coinManager, economy, balanceHudService, commandTimeoutService));
             getCommandRegistry().registerCommand(new ChangeAllMoneyCommand(languageManager, coinManager, economy, balanceHudService, commandTimeoutService));
             getCommandRegistry().registerCommand(new ChangeHandMoneyCommand(languageManager, coinManager, economy, balanceHudService, commandTimeoutService));
-            getCommandRegistry().registerCommand(new ChangeHudOffCommand(balanceHudService));
-            getCommandRegistry().registerCommand(new ChangeHudOnCommand(balanceHudService));
+            getCommandRegistry().registerCommand(new ChangeHudOffCommand(languageManager, balanceHudService));
+            getCommandRegistry().registerCommand(new ChangeHudOnCommand(languageManager, balanceHudService));
             getCommandRegistry().registerCommand(new EcoCoinsAdminCommand(languageManager, coinManager, getLogger()));
 
             getLogger().at(Level.INFO).log(
