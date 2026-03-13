@@ -214,11 +214,25 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
             return;
         }
 
-        player.sendMessage(lang.trMsg(pLang, "command.change.success", Map.of(
+        String primaryMoneyName = coin.money_name != null ? coin.money_name.primary : moneyName;
+        String itemId = (coin.name_item == null || coin.name_item.isBlank()) ? "?" : coin.name_item;
+
+        String successTemplate = lang.tr(pLang, "command.change.success", Map.of(
                 "amount", amount,
-                "moneyName", coin.money_name != null ? coin.money_name.primary : moneyName,
+                "primary", primaryMoneyName,
                 "cost", cost
-        )));
+        ));
+        String moneyNamePlaceholder = "{lang_moneyName}";
+        int moneyNameIndex = successTemplate.indexOf(moneyNamePlaceholder);
+
+        Message itemName = Message.translation("server.items." + itemId + ".name");
+        if (moneyNameIndex < 0) {
+            player.sendMessage(lang.rawToMsg(successTemplate));
+        } else {
+            String before = successTemplate.substring(0, moneyNameIndex);
+            String after = successTemplate.substring(moneyNameIndex + moneyNamePlaceholder.length());
+            player.sendMessage(Message.join(lang.rawToMsg(before), itemName, lang.rawToMsg(after)));
+        }
 
         hudService.updateBalance(player, playerRef);
     }
@@ -251,14 +265,25 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
             String primary = (c.money_name != null && c.money_name.primary != null) ? c.money_name.primary : "?";
             String aliasJoined = joinAliases(c.money_name != null ? c.money_name.aliases : null, pLang);
 
-            Message linePrefix = lang.trMsg(pLang, "command.change.list.entry", Map.of(
+            String entryTemplate = lang.tr(pLang, "command.change.list.entry", Map.of(
                     "pay", c.pay,
                     "primary", primary,
                     "aliases", aliasJoined
             ));
+            String moneyNamePlaceholder = "{lang_moneyName}";
+            int moneyNameIndex = entryTemplate.indexOf(moneyNamePlaceholder);
 
             Message itemName = Message.translation("server.items." + itemId + ".name");
-            ctx.sendMessage(Message.join(linePrefix, Message.raw(" "), itemName));
+            if (moneyNameIndex < 0) {
+                Message linePrefix = lang.rawToMsg(entryTemplate);
+                ctx.sendMessage(Message.join(linePrefix, Message.raw(" "), itemName));
+                continue;
+            }
+
+            String before = entryTemplate.substring(0, moneyNameIndex);
+            String after = entryTemplate.substring(moneyNameIndex + moneyNamePlaceholder.length());
+            Message line = Message.join(lang.rawToMsg(before), itemName, lang.rawToMsg(after));
+            ctx.sendMessage(line);
         }
     }
 
