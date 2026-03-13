@@ -95,10 +95,14 @@ Si el jugador se desconecta durante la espera, también se cancela.
   Permite usar `/change` para ver monedas y `pay`.
 - `ecocoins.command.changeall.use`  
   Permite usar `/changeall` para canjear todas las monedas físicas del inventario.
+- `ecocoins.command.changehand.use`
+  Permite usar `/changehand` para canjear solo monedas de la hotbar (slots 1-9).
 - `ecocoins.vip`
-  Aplica timeout corto en `/change` y `/changeall`.
+  Aplica timeout corto en `/change`, `/changeall` y `/changehand`.
 - `ecocoins.timepass`
-  Omite timeout en `/change` y `/changeall` (ejecución inmediata).
+  Omite timeout en `/change`, `/changeall` y `/changehand` (ejecución inmediata).
+- `ecocoins.command.reload.use`
+  Permite usar `/ecocoins reload` para recargar Coins/Languages en caliente.
 - `ecocoins.command.changeoff.use`
   Permite usar `/changeoff` para ocultar el HUD.
 - `ecocoins.command.changeon.use`
@@ -110,8 +114,10 @@ Si el jugador se desconecta durante la espera, también se cancela.
 - `/change <moneda>` → compra 1 moneda física.
 - `/change <moneda> <cantidad>` → compra una cantidad específica.
 - `/changeall` → canjea todas las monedas físicas del inventario al balance digital.
+- `/changehand` → canjea solo monedas físicas en hotbar (slots 1-9) al balance digital.
 - `/changeoff` → oculta el HUD de balance.
 - `/changeon` → vuelve a mostrar el HUD de balance.
+- `/ecocoins reload` → recarga Coins/Languages sin reiniciar servidor (assets requieren reinicio).
 
 ## Sonido de canje (redeem)
 

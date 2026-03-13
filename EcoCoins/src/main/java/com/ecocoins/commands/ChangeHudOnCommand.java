@@ -1,5 +1,6 @@
 package com.ecocoins.commands;
 
+import com.ecocoins.core.LanguageManager;
 import com.ecocoins.hud.BalanceHudService;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
@@ -15,10 +16,12 @@ public final class ChangeHudOnCommand extends AbstractPlayerCommand {
 
     public static final String PERM_CHANGEON_USE = "ecocoins.command.changeon.use";
 
+    private final LanguageManager lang;
     private final BalanceHudService hudService;
 
-    public ChangeHudOnCommand(BalanceHudService hudService) {
+    public ChangeHudOnCommand(LanguageManager lang, BalanceHudService hudService) {
         super("changeon", "Muestra otra vez el HUD de balance de EcoCoins.", false);
+        this.lang = lang;
         this.hudService = hudService;
         this.requirePermission(PERM_CHANGEON_USE);
     }
@@ -35,7 +38,9 @@ public final class ChangeHudOnCommand extends AbstractPlayerCommand {
             return;
         }
 
+        String pLang = lang.resolveLang(playerRef.getLanguage());
+
         hudService.show(player, playerRef);
-        ctx.sendMessage(Message.raw("[EcoCoins] HUD de balance activado."));
+        ctx.sendMessage(lang.trMsg(pLang, "command.changeon.success", java.util.Map.of()));
     }
 }
