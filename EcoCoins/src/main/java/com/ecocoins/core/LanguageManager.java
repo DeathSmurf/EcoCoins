@@ -135,6 +135,11 @@ public final class LanguageManager {
         return legacyAmpersandToMessage(raw);
     }
 
+    /** Convierte texto plano con códigos & a Message. */
+    public Message rawToMsg(String raw) {
+        return legacyAmpersandToMessage(raw);
+    }
+
     // ---------------------------
     // Color parser (&6, &l, &o, &r, etc.)
     // ---------------------------
