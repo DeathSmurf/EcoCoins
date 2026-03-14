@@ -255,6 +255,8 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
         }
 
         String pLang = lang.resolveLang(playerRef.getLanguage());
+        ctx.sendMessage(lang.trMsg(pLang, "command.change.list.divline.first", Map.of()));
+        ctx.sendMessage(lang.trMsg(pLang, "command.change.list.usage.changehelp", Map.of()));
         ctx.sendMessage(lang.trMsg(pLang, "command.change.list.usage", Map.of()));
         ctx.sendMessage(lang.trMsg(pLang, "command.change.list.header", Map.of()));
 
@@ -287,6 +289,8 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
             Message line = Message.join(lang.rawToMsg(before), itemName, lang.rawToMsg(after));
             ctx.sendMessage(line);
         }
+
+        ctx.sendMessage(lang.trMsg(pLang, "command.change.list.divline.last", Map.of()));
     }
 
     private String joinAliases(List<String> aliases, String pLang) {

@@ -39,6 +39,7 @@ public final class ChangeHelpCommand extends AbstractPlayerCommand {
 
         String pLang = lang.resolveLang(playerRef.getLanguage());
 
+        ctx.sendMessage(lang.trMsg(pLang, "command.changehelp.divline.first", Map.of()));
         ctx.sendMessage(lang.trMsg(pLang, "command.changehelp.header", Map.of()));
         ctx.sendMessage(lang.trMsg(pLang, "command.changehelp.section.exchange", Map.of()));
         ctx.sendMessage(lang.trMsg(pLang, "command.changehelp.line.change", Map.of()));
@@ -48,5 +49,6 @@ public final class ChangeHelpCommand extends AbstractPlayerCommand {
         ctx.sendMessage(lang.trMsg(pLang, "command.changehelp.section.general", Map.of()));
         ctx.sendMessage(lang.trMsg(pLang, "command.changehelp.line.changeoff", Map.of()));
         ctx.sendMessage(lang.trMsg(pLang, "command.changehelp.line.changeon", Map.of()));
+        ctx.sendMessage(lang.trMsg(pLang, "command.changehelp.divline.last", Map.of()));
     }
 }
