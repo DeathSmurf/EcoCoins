@@ -214,11 +214,26 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
             return;
         }
 
-        player.sendMessage(lang.trMsg(pLang, "command.change.success", Map.of(
+        String primaryMoneyName = coin.money_name != null ? coin.money_name.primary : moneyName;
+        String itemId = (coin.name_item == null || coin.name_item.isBlank()) ? "?" : coin.name_item;
+
+        String successTemplate = lang.tr(pLang, "command.change.success", Map.of(
                 "amount", amount,
-                "moneyName", coin.money_name != null ? coin.money_name.primary : moneyName,
+                "primary", primaryMoneyName,
                 "cost", cost
-        )));
+        ));
+        String moneyNamePlaceholder = "{lang_moneyName}";
+        int moneyNameIndex = successTemplate.indexOf(moneyNamePlaceholder);
+
+        Message itemName = Message.translation("server.items." + itemId + ".name");
+        if (moneyNameIndex < 0) {
+            player.sendMessage(lang.rawToMsg(successTemplate));
+        } else {
+            String before = successTemplate.substring(0, moneyNameIndex);
+            String after = successTemplate.substring(moneyNameIndex + moneyNamePlaceholder.length());
+            applyLegacyStyleFromPrefix(itemName, before);
+            player.sendMessage(Message.join(lang.rawToMsg(before), itemName, lang.rawToMsg(after)));
+        }
 
         hudService.updateBalance(player, playerRef);
     }
@@ -240,6 +255,8 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
         }
 
         String pLang = lang.resolveLang(playerRef.getLanguage());
+        ctx.sendMessage(lang.trMsg(pLang, "command.change.list.divline.first", Map.of()));
+        ctx.sendMessage(lang.trMsg(pLang, "command.change.list.usage.changehelp", Map.of()));
         ctx.sendMessage(lang.trMsg(pLang, "command.change.list.usage", Map.of()));
         ctx.sendMessage(lang.trMsg(pLang, "command.change.list.header", Map.of()));
 
@@ -251,15 +268,29 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
             String primary = (c.money_name != null && c.money_name.primary != null) ? c.money_name.primary : "?";
             String aliasJoined = joinAliases(c.money_name != null ? c.money_name.aliases : null, pLang);
 
-            Message linePrefix = lang.trMsg(pLang, "command.change.list.entry", Map.of(
+            String entryTemplate = lang.tr(pLang, "command.change.list.entry", Map.of(
                     "pay", c.pay,
                     "primary", primary,
                     "aliases", aliasJoined
             ));
+            String moneyNamePlaceholder = "{lang_moneyName}";
+            int moneyNameIndex = entryTemplate.indexOf(moneyNamePlaceholder);
 
             Message itemName = Message.translation("server.items." + itemId + ".name");
-            ctx.sendMessage(Message.join(linePrefix, Message.raw(" "), itemName));
+            if (moneyNameIndex < 0) {
+                Message linePrefix = lang.rawToMsg(entryTemplate);
+                ctx.sendMessage(Message.join(linePrefix, Message.raw(" "), itemName));
+                continue;
+            }
+
+            String before = entryTemplate.substring(0, moneyNameIndex);
+            String after = entryTemplate.substring(moneyNameIndex + moneyNamePlaceholder.length());
+            applyLegacyStyleFromPrefix(itemName, before);
+            Message line = Message.join(lang.rawToMsg(before), itemName, lang.rawToMsg(after));
+            ctx.sendMessage(line);
         }
+
+        ctx.sendMessage(lang.trMsg(pLang, "command.change.list.divline.last", Map.of()));
     }
 
     private String joinAliases(List<String> aliases, String pLang) {
@@ -283,15 +314,99 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
         return sb.toString();
     }
 
+    private static void applyLegacyStyleFromPrefix(Message target, String prefix) {
+        LegacyStyle style = resolveLegacyStyle(prefix);
+        if (style.colorHex != null) target.color(style.colorHex);
+        if (style.bold) target.bold(true);
+        if (style.italic) target.italic(true);
+        if (style.monospace) target.monospace(true);
+    }
+
+    private static LegacyStyle resolveLegacyStyle(String input) {
+        String colorHex = null;
+        boolean bold = false;
+        boolean italic = false;
+        boolean monospace = false;
+
+        if (input == null || input.isEmpty()) {
+            return new LegacyStyle(colorHex, bold, italic, monospace);
+        }
+
+        for (int i = 0; i < input.length(); i++) {
+            char ch = input.charAt(i);
+            if (ch != '&' || i + 1 >= input.length()) continue;
+
+            char code = Character.toLowerCase(input.charAt(i + 1));
+            i++;
+
+            String mapped = mapLegacyColorCodeToHex(code);
+            if (mapped != null) {
+                colorHex = mapped;
+                continue;
+            }
+
+            switch (code) {
+                case 'l' -> bold = true;
+                case 'o' -> italic = true;
+                case 'p' -> monospace = true;
+                case 'r' -> {
+                    colorHex = null;
+                    bold = false;
+                    italic = false;
+                    monospace = false;
+                }
+                default -> { }
+            }
+        }
+
+        return new LegacyStyle(colorHex, bold, italic, monospace);
+    }
+
+    private static String mapLegacyColorCodeToHex(char code) {
+        return switch (code) {
+            case '0' -> "#000000";
+            case '1' -> "#0000AA";
+            case '2' -> "#00AA00";
+            case '3' -> "#00AAAA";
+            case '4' -> "#AA0000";
+            case '5' -> "#AA00AA";
+            case '6' -> "#FFAA00";
+            case '7' -> "#AAAAAA";
+            case '8' -> "#555555";
+            case '9' -> "#5555FF";
+            case 'a' -> "#55FF55";
+            case 'b' -> "#55FFFF";
+            case 'c' -> "#FF5555";
+            case 'd' -> "#FF55FF";
+            case 'e' -> "#FFFF55";
+            case 'f' -> "#FFFFFF";
+            default -> null;
+        };
+    }
+
+    private static final class LegacyStyle {
+        private final String colorHex;
+        private final boolean bold;
+        private final boolean italic;
+        private final boolean monospace;
+
+        private LegacyStyle(String colorHex, boolean bold, boolean italic, boolean monospace) {
+            this.colorHex = colorHex;
+            this.bold = bold;
+            this.italic = italic;
+            this.monospace = monospace;
+        }
+    }
+
     private final class ChangeMoneyAmountVariant extends AbstractPlayerCommand {
         private final RequiredArg<String> moneyNameArg2;
-        private final RequiredArg<Integer> amountArg2;
+        private final RequiredArg<String> amountArg2;
 
         private ChangeMoneyAmountVariant() {
             super("Compra una cantidad específica: /change <money_name> <amount>");
             this.requirePermission(PERM_CHANGE_USE);
             this.moneyNameArg2 = withRequiredArg("money_name", "Nombre de moneda (primary o alias).", ArgTypes.STRING);
-            this.amountArg2 = withRequiredArg("amount", "Cantidad a comprar.", ArgTypes.INTEGER);
+            this.amountArg2 = withRequiredArg("amount", "Cantidad a comprar.", ArgTypes.STRING);
         }
 
         @Override
@@ -301,10 +416,19 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
                                PlayerRef playerRef,
                                World world) {
             String moneyName = ctx.get(moneyNameArg2);
-            int amount = ctx.get(amountArg2);
+            String rawAmount = ctx.get(amountArg2);
 
             if (moneyName != null && moneyName.equalsIgnoreCase("list")) {
                 executeList(ctx, store, playerEntityRef, playerRef);
+                return;
+            }
+
+            int amount;
+            try {
+                amount = Integer.parseInt(rawAmount);
+            } catch (NumberFormatException ex) {
+                String pLang = lang.resolveLang(playerRef.getLanguage());
+                ctx.sendMessage(lang.trMsg(pLang, "command.change.invalid_usage", Map.of()));
                 return;
             }
 
