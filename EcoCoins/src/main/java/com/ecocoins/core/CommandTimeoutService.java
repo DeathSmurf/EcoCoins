@@ -5,11 +5,14 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.server.core.asset.type.soundevent.config.SoundEvent;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.inventory.SoundCategory;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.permissions.PermissionsModule;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import com.hypixel.hytale.server.util.SoundUtil;
 import com.hypixel.hytale.logger.HytaleLogger;
 
 import java.util.Map;
@@ -35,6 +38,8 @@ public final class CommandTimeoutService {
     private static final String KEY_TIMEOUT_WAITING = "command.timeout.waiting";
     private static final String KEY_TIMEOUT_MOVED_CANCELLED = "command.timeout.cancelled_moved";
     private static final String KEY_TIMEOUT_ORIGIN_UNAVAILABLE = "command.timeout.origin_unavailable";
+    private static final String TICK_TIMER_SOUND_EVENT_ID = "SFX_EcoCoins_TickTimer";
+    private static final String CANCEL_OPERATION_SOUND_EVENT_ID = "SFX_EcoCoins_CancelOperation";
 
     public enum TimeoutProfile {
         CHANGE("/change", 5, 3),
@@ -163,14 +168,24 @@ public final class CommandTimeoutService {
         if (!pending.origin.equals(current)) {
             PendingCommand removed = pendingByPlayer.remove(playerUuid);
             if (removed != null) {
-                buffer.run(store -> sendMessageIfOnline(store, currentRef,
-                        KEY_TIMEOUT_MOVED_CANCELLED,
-                        Map.of()));
+                buffer.run(store -> {
+                    sendMessageIfOnline(store, currentRef,
+                            KEY_TIMEOUT_MOVED_CANCELLED,
+                            Map.of());
+                    playSoundIfOnline(store, currentRef, CANCEL_OPERATION_SOUND_EVENT_ID);
+                });
             }
             return;
         }
 
         pending.elapsedSeconds += deltaTime;
+        while (pending.nextTickSoundAtSeconds > 0
+                && pending.nextTickSoundAtSeconds < pending.waitSeconds
+                && pending.elapsedSeconds >= pending.nextTickSoundAtSeconds) {
+            buffer.run(store -> playSoundIfOnline(store, currentRef, TICK_TIMER_SOUND_EVENT_ID));
+            pending.nextTickSoundAtSeconds += 2.0f;
+        }
+
         if (pending.elapsedSeconds < pending.waitSeconds) {
             return;
         }
@@ -282,6 +297,29 @@ public final class CommandTimeoutService {
         return lang.trMsg(resolved, key, vars);
     }
 
+    private void playSoundIfOnline(Store<EntityStore> store,
+                                   Ref<EntityStore> playerEntityRef,
+                                   String soundEventId) {
+        if (store == null || playerEntityRef == null || !playerEntityRef.isValid() || soundEventId == null || soundEventId.isBlank()) {
+            return;
+        }
+
+        Player online = store.getComponent(playerEntityRef, Player.getComponentType());
+        if (online == null) return;
+
+        try {
+            SoundEvent event = SoundEvent.getAssetMap().getAsset(soundEventId);
+            if (event == null) return;
+
+            int soundEventIndex = SoundEvent.getAssetMap().getIndex(soundEventId);
+            if (soundEventIndex < 0) return;
+
+            SoundUtil.playSoundEvent2dToPlayer(online.getPlayerRef(), soundEventIndex, SoundCategory.SFX);
+        } catch (Throwable ignored) {
+            // El sonido es best-effort: no debe interrumpir la lógica del timeout.
+        }
+    }
+
     private BlockPos resolveBlockPos(Store<EntityStore> store,
                                      Ref<EntityStore> playerEntityRef) {
         if (store == null || playerEntityRef == null || !playerEntityRef.isValid()) return null;
@@ -300,6 +338,7 @@ public final class CommandTimeoutService {
         private final Runnable action;
         private final int waitSeconds;
         private float elapsedSeconds;
+        private float nextTickSoundAtSeconds;
 
         private PendingCommand(BlockPos origin,
                                Runnable action,
@@ -308,6 +347,7 @@ public final class CommandTimeoutService {
             this.action = action;
             this.waitSeconds = waitSeconds;
             this.elapsedSeconds = 0.0f;
+            this.nextTickSoundAtSeconds = 2.0f;
         }
     }
 
