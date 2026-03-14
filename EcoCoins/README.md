@@ -64,7 +64,7 @@ Si no deposita balance al usar la moneda, revisa logs con prefijo `"[EcoCoins][R
 - plantilla lista para copiar: `docs/reference/templates/Template_EcoCoins_Coin_Item.json`
 
 
-## Timeout de comandos (/change y /changeall)
+## Timeout de comandos (/change, /changeall y /changehand)
 
 EcoCoins aplica un sistema de espera antes de ejecutar:
 
@@ -72,6 +72,9 @@ EcoCoins aplica un sistema de espera antes de ejecutar:
   - default: `5s`
   - VIP (`ecocoins.vip`): `3s`
 - `/changeall`
+  - default: `15s`
+  - VIP (`ecocoins.vip`): `7s`
+- `/changehand`
   - default: `15s`
   - VIP (`ecocoins.vip`): `7s`
 
