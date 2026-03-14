@@ -3,6 +3,7 @@
   "command.change.not_enough_money": "&cYou don't have enough money. &7Cost: &e{cost}",
   "command.change.inventory_full": "&cYou don't have inventory space.",
   "command.change.not_found": "&cThe coin {moneyName} does not exist.",
+  "command.change.invalid_usage": "&cInvalid usage. &7Use &e/change <coin> <amount>&7.",
   "command.change.invalid_amount": "&cInvalid amount (&7{amount}&c). Must be greater than 0.",
   "redeem.success": "&aRedeem successful: &6+{pay}",
   "redeem.economy_unavailable": "&cTheEconomy is not available.",

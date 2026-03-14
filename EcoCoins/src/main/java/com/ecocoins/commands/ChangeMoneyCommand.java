@@ -400,13 +400,13 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
 
     private final class ChangeMoneyAmountVariant extends AbstractPlayerCommand {
         private final RequiredArg<String> moneyNameArg2;
-        private final RequiredArg<Integer> amountArg2;
+        private final RequiredArg<String> amountArg2;
 
         private ChangeMoneyAmountVariant() {
             super("Compra una cantidad específica: /change <money_name> <amount>");
             this.requirePermission(PERM_CHANGE_USE);
             this.moneyNameArg2 = withRequiredArg("money_name", "Nombre de moneda (primary o alias).", ArgTypes.STRING);
-            this.amountArg2 = withRequiredArg("amount", "Cantidad a comprar.", ArgTypes.INTEGER);
+            this.amountArg2 = withRequiredArg("amount", "Cantidad a comprar.", ArgTypes.STRING);
         }
 
         @Override
@@ -416,10 +416,19 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
                                PlayerRef playerRef,
                                World world) {
             String moneyName = ctx.get(moneyNameArg2);
-            int amount = ctx.get(amountArg2);
+            String rawAmount = ctx.get(amountArg2);
 
             if (moneyName != null && moneyName.equalsIgnoreCase("list")) {
                 executeList(ctx, store, playerEntityRef, playerRef);
+                return;
+            }
+
+            int amount;
+            try {
+                amount = Integer.parseInt(rawAmount);
+            } catch (NumberFormatException ex) {
+                String pLang = lang.resolveLang(playerRef.getLanguage());
+                ctx.sendMessage(lang.trMsg(pLang, "command.change.invalid_usage", Map.of()));
                 return;
             }
 

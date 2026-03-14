@@ -96,7 +96,13 @@ public final class LanguageManager {
                 raw = raw.replace("{" + e.getKey() + "}", String.valueOf(e.getValue()));
             }
         }
-        return raw;
+        return normalizeLineBreakTokens(raw);
+    }
+
+        /** Permite definir saltos de línea en JSON con //n. */
+    private static String normalizeLineBreakTokens(String input) {
+        if (input == null || input.isEmpty()) return input;
+        return input.replace("//n", "\n");
     }
 
     private Map<String, String> resolveTable(String lang) {
