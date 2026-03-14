@@ -38,7 +38,7 @@
   "command.changeall.no_coins": "&cNo tienes Monedas en tu inventario para intercambiar.",
   "command.changeall.economy_unavailable": "&cTheEconomy no está disponible; no puedo depositar balance.",
   "command.changeall.deposit_failed": "&cNo pude depositar el canje total en TheEconomy. Se revirtió el inventario.",
-  "command.changehand.success": "&a&lIntercambio:&r &7{coins} Moneda(s) &7> &a+&e{pay} Coins &7a tu Billetera Digital.",
+  "command.changehand.success": "&a&lIntercambio:&r &7{coins} Monedas &7> &6+{pay} Coins a tu Billetera Digital.",
   "command.changehand.no_coins": "&cNo tienes Monedas en la Hotbar (slots 1-9) para intercambiar.",
   "command.changehand.economy_unavailable": "&cTheEconomy no está disponible; no puedo depositar balance.",
   "command.changehand.deposit_failed": "&cNo pude depositar el canje de la hotbar en TheEconomy. Se revirtió el inventario.",

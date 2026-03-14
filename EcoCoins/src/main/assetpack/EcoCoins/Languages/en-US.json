@@ -38,7 +38,7 @@
   "command.changeall.no_coins": "&cYou don't have Coins in your inventory to exchange.",
   "command.changeall.economy_unavailable": "&cTheEconomy is not available; cannot deposit balance.",
   "command.changeall.deposit_failed": "&cCould not deposit the total exchange into TheEconomy. Inventory was reverted.",
-  "command.changehand.success": "&a&lExchange:&r &7{coins} Coin(s) &7> &a+&e{pay} Coins &7to your Digital Wallet.",
+  "command.changehand.success": "&a&lExchange:&r &7{coins} Coins &7> &6+{pay} Coins to your Digital Wallet.",
   "command.changehand.no_coins": "&cYou don't have Coins in the Hotbar (slots 1-9) to exchange.",
   "command.changehand.economy_unavailable": "&cTheEconomy is not available; cannot deposit balance.",
   "command.changehand.deposit_failed": "&cCould not deposit the hotbar exchange into TheEconomy. Inventory was reverted.",
