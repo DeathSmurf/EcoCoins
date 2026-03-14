@@ -4,6 +4,7 @@ import com.ecocoins.commands.ChangeAllMoneyCommand;
 import com.ecocoins.commands.ChangeHandMoneyCommand;
 import com.ecocoins.commands.ChangeHudOffCommand;
 import com.ecocoins.commands.ChangeHudOnCommand;
+import com.ecocoins.commands.ChangeHelpCommand;
 import com.ecocoins.commands.ChangeMoneyCommand;
 import com.ecocoins.commands.EcoCoinsAdminCommand;
 import com.ecocoins.core.CoinManager;
@@ -96,6 +97,7 @@ public final class EcoCoins extends JavaPlugin {
             getCommandRegistry().registerCommand(new ChangeHandMoneyCommand(languageManager, coinManager, economy, balanceHudService, commandTimeoutService));
             getCommandRegistry().registerCommand(new ChangeHudOffCommand(languageManager, balanceHudService));
             getCommandRegistry().registerCommand(new ChangeHudOnCommand(languageManager, balanceHudService));
+            getCommandRegistry().registerCommand(new ChangeHelpCommand(languageManager));
             getCommandRegistry().registerCommand(new EcoCoinsAdminCommand(languageManager, coinManager, getLogger()));
 
             getLogger().at(Level.INFO).log(
@@ -103,7 +105,7 @@ public final class EcoCoins extends JavaPlugin {
                             + " langs=" + languageManager.countLanguages()
                             + " theEconomy=" + economy.isAvailable()
                             + " interactionTrigger=" + COIN_INTERACTION_TRIGGER
-                            + " (comandos: /change /changeall /changehand /changeoff /changeon /ecocoins reload)"
+                            + " (comandos: /change /changeall /changehand /changeoff /changeon /changehelp /ecocoins reload)"
             );
 
         } catch (Throwable t) {

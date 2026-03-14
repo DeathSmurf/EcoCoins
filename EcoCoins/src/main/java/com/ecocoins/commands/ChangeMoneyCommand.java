@@ -231,6 +231,7 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
         } else {
             String before = successTemplate.substring(0, moneyNameIndex);
             String after = successTemplate.substring(moneyNameIndex + moneyNamePlaceholder.length());
+            applyLegacyStyleFromPrefix(itemName, before);
             player.sendMessage(Message.join(lang.rawToMsg(before), itemName, lang.rawToMsg(after)));
         }
 
@@ -282,6 +283,7 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
 
             String before = entryTemplate.substring(0, moneyNameIndex);
             String after = entryTemplate.substring(moneyNameIndex + moneyNamePlaceholder.length());
+            applyLegacyStyleFromPrefix(itemName, before);
             Message line = Message.join(lang.rawToMsg(before), itemName, lang.rawToMsg(after));
             ctx.sendMessage(line);
         }
@@ -306,6 +308,90 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
             else sb.append(", ").append(a);
         }
         return sb.toString();
+    }
+
+    private static void applyLegacyStyleFromPrefix(Message target, String prefix) {
+        LegacyStyle style = resolveLegacyStyle(prefix);
+        if (style.colorHex != null) target.color(style.colorHex);
+        if (style.bold) target.bold(true);
+        if (style.italic) target.italic(true);
+        if (style.monospace) target.monospace(true);
+    }
+
+    private static LegacyStyle resolveLegacyStyle(String input) {
+        String colorHex = null;
+        boolean bold = false;
+        boolean italic = false;
+        boolean monospace = false;
+
+        if (input == null || input.isEmpty()) {
+            return new LegacyStyle(colorHex, bold, italic, monospace);
+        }
+
+        for (int i = 0; i < input.length(); i++) {
+            char ch = input.charAt(i);
+            if (ch != '&' || i + 1 >= input.length()) continue;
+
+            char code = Character.toLowerCase(input.charAt(i + 1));
+            i++;
+
+            String mapped = mapLegacyColorCodeToHex(code);
+            if (mapped != null) {
+                colorHex = mapped;
+                continue;
+            }
+
+            switch (code) {
+                case 'l' -> bold = true;
+                case 'o' -> italic = true;
+                case 'p' -> monospace = true;
+                case 'r' -> {
+                    colorHex = null;
+                    bold = false;
+                    italic = false;
+                    monospace = false;
+                }
+                default -> { }
+            }
+        }
+
+        return new LegacyStyle(colorHex, bold, italic, monospace);
+    }
+
+    private static String mapLegacyColorCodeToHex(char code) {
+        return switch (code) {
+            case '0' -> "#000000";
+            case '1' -> "#0000AA";
+            case '2' -> "#00AA00";
+            case '3' -> "#00AAAA";
+            case '4' -> "#AA0000";
+            case '5' -> "#AA00AA";
+            case '6' -> "#FFAA00";
+            case '7' -> "#AAAAAA";
+            case '8' -> "#555555";
+            case '9' -> "#5555FF";
+            case 'a' -> "#55FF55";
+            case 'b' -> "#55FFFF";
+            case 'c' -> "#FF5555";
+            case 'd' -> "#FF55FF";
+            case 'e' -> "#FFFF55";
+            case 'f' -> "#FFFFFF";
+            default -> null;
+        };
+    }
+
+    private static final class LegacyStyle {
+        private final String colorHex;
+        private final boolean bold;
+        private final boolean italic;
+        private final boolean monospace;
+
+        private LegacyStyle(String colorHex, boolean bold, boolean italic, boolean monospace) {
+            this.colorHex = colorHex;
+            this.bold = bold;
+            this.italic = italic;
+            this.monospace = monospace;
+        }
     }
 
     private final class ChangeMoneyAmountVariant extends AbstractPlayerCommand {
