@@ -5,6 +5,7 @@ import com.ecocoins.core.CommandTimeoutService;
 import com.ecocoins.core.InventoryUtil;
 import com.ecocoins.core.LanguageManager;
 import com.ecocoins.core.TheEconomyService;
+import com.ecocoins.core.SuccessMessageBurstService;
 import com.ecocoins.hud.BalanceHudService;
 import com.ecocoins.model.CoinDefinition;
 import com.hypixel.hytale.component.Ref;
@@ -38,18 +39,21 @@ public final class ChangeHandMoneyCommand extends AbstractPlayerCommand {
     private final TheEconomyService economy;
     private final BalanceHudService hudService;
     private final CommandTimeoutService timeoutService;
+    private final SuccessMessageBurstService successBurstService;
 
     public ChangeHandMoneyCommand(LanguageManager lang,
                                   CoinManager coins,
                                   TheEconomyService economy,
                                   BalanceHudService hudService,
-                                  CommandTimeoutService timeoutService) {
+                                  CommandTimeoutService timeoutService,
+                                  SuccessMessageBurstService successBurstService) {
         super("changehand", "Convierte monedas EcoCoins solo de la hotbar (slots 1-9).", false);
         this.lang = lang;
         this.coins = coins;
         this.economy = economy;
         this.hudService = hudService;
         this.timeoutService = timeoutService;
+        this.successBurstService = successBurstService;
         this.requirePermission(PERM_CHANGEHAND_USE);
     }
 
@@ -161,10 +165,7 @@ public final class ChangeHandMoneyCommand extends AbstractPlayerCommand {
         player.sendInventory();
         playRedeemSound(player);
 
-        player.sendMessage(lang.trMsg(pLang, "command.changehand.success", Map.of(
-                "coins", totalCoins,
-                "pay", totalPay
-        )));
+        successBurstService.sendSuccess(player, "command.changehand.success", totalCoins, totalPay);
 
         hudService.updateBalance(player, playerRef);
     }

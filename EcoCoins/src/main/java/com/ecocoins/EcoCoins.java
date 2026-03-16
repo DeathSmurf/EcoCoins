@@ -13,6 +13,7 @@ import com.ecocoins.core.CoinRedeemService;
 import com.ecocoins.core.CommandTimeoutService;
 import com.ecocoins.core.ConfigBootstrap;
 import com.ecocoins.core.LanguageManager;
+import com.ecocoins.core.SuccessMessageBurstService;
 import com.ecocoins.core.TheEconomyService;
 import com.ecocoins.events.CommandTimeoutMovementEvent;
 import com.ecocoins.hud.BalanceHudService;
@@ -47,6 +48,7 @@ public final class EcoCoins extends JavaPlugin {
     private CoinRedeemService coinRedeemService;
     private CoinPickupSoundService coinPickupSoundService;
     private CommandTimeoutService commandTimeoutService;
+    private SuccessMessageBurstService successMessageBurstService;
 
     public EcoCoins(@Nonnull JavaPluginInit init) {
         super(init);
@@ -68,7 +70,8 @@ public final class EcoCoins extends JavaPlugin {
 
             this.economy = new TheEconomyService(getLogger());
             this.balanceHudService = new BalanceHudService(economy);
-            this.coinRedeemService = new CoinRedeemService(getLogger(), coinManager, economy, languageManager, balanceHudService, REDEEM_DEBUG_LOGS);
+            this.successMessageBurstService = new SuccessMessageBurstService(languageManager);
+            this.coinRedeemService = new CoinRedeemService(getLogger(), coinManager, economy, languageManager, balanceHudService, successMessageBurstService, REDEEM_DEBUG_LOGS);
             this.coinPickupSoundService = new CoinPickupSoundService(getLogger(), coinManager);
             this.commandTimeoutService = new CommandTimeoutService(getLogger(), languageManager);
 
@@ -93,8 +96,8 @@ public final class EcoCoins extends JavaPlugin {
             getEventRegistry().registerGlobal(PlayerDisconnectEvent.class, this::onPlayerDisconnect);
 
             getCommandRegistry().registerCommand(new ChangeMoneyCommand(languageManager, coinManager, economy, balanceHudService, commandTimeoutService));
-            getCommandRegistry().registerCommand(new ChangeAllMoneyCommand(languageManager, coinManager, economy, balanceHudService, commandTimeoutService));
-            getCommandRegistry().registerCommand(new ChangeHandMoneyCommand(languageManager, coinManager, economy, balanceHudService, commandTimeoutService));
+            getCommandRegistry().registerCommand(new ChangeAllMoneyCommand(languageManager, coinManager, economy, balanceHudService, commandTimeoutService, successMessageBurstService));
+            getCommandRegistry().registerCommand(new ChangeHandMoneyCommand(languageManager, coinManager, economy, balanceHudService, commandTimeoutService, successMessageBurstService));
             getCommandRegistry().registerCommand(new ChangeHudOffCommand(languageManager, balanceHudService));
             getCommandRegistry().registerCommand(new ChangeHudOnCommand(languageManager, balanceHudService));
             getCommandRegistry().registerCommand(new ChangeHelpCommand(languageManager));
@@ -130,6 +133,9 @@ public final class EcoCoins extends JavaPlugin {
     protected void shutdown() {
         if (commandTimeoutService != null) {
             commandTimeoutService.shutdown();
+        }
+        if (successMessageBurstService != null) {
+            successMessageBurstService.shutdown();
         }
         getLogger().at(Level.INFO).log("[EcoCoins] shutdown()");
     }
@@ -178,6 +184,9 @@ public final class EcoCoins extends JavaPlugin {
         }
         if (commandTimeoutService != null) {
             commandTimeoutService.cancelPending(event.getPlayerRef());
+        }
+        if (successMessageBurstService != null) {
+            successMessageBurstService.clearPlayer(event.getPlayerRef().getUuid());
         }
     }
 
