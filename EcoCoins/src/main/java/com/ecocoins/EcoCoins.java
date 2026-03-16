@@ -14,7 +14,9 @@ import com.ecocoins.core.CommandTimeoutService;
 import com.ecocoins.core.ConfigBootstrap;
 import com.ecocoins.core.LanguageManager;
 import com.ecocoins.core.TheEconomyService;
+import com.ecocoins.core.SuccessMessageAggregationService;
 import com.ecocoins.events.CommandTimeoutMovementEvent;
+import com.ecocoins.events.SuccessMessageAggregationEvent;
 import com.ecocoins.hud.BalanceHudService;
 import com.ecocoins.interactions.CoinRedeemInteraction;
 import com.ecocoins.util.HudHelper;
@@ -47,6 +49,7 @@ public final class EcoCoins extends JavaPlugin {
     private CoinRedeemService coinRedeemService;
     private CoinPickupSoundService coinPickupSoundService;
     private CommandTimeoutService commandTimeoutService;
+    private SuccessMessageAggregationService successAggregationService;
 
     public EcoCoins(@Nonnull JavaPluginInit init) {
         super(init);
@@ -68,7 +71,8 @@ public final class EcoCoins extends JavaPlugin {
 
             this.economy = new TheEconomyService(getLogger());
             this.balanceHudService = new BalanceHudService(economy);
-            this.coinRedeemService = new CoinRedeemService(getLogger(), coinManager, economy, languageManager, balanceHudService, REDEEM_DEBUG_LOGS);
+            this.successAggregationService = new SuccessMessageAggregationService(languageManager);
+            this.coinRedeemService = new CoinRedeemService(getLogger(), coinManager, economy, languageManager, balanceHudService, successAggregationService, REDEEM_DEBUG_LOGS);
             this.coinPickupSoundService = new CoinPickupSoundService(getLogger(), coinManager);
             this.commandTimeoutService = new CommandTimeoutService(getLogger(), languageManager);
 
@@ -92,9 +96,9 @@ public final class EcoCoins extends JavaPlugin {
             getEventRegistry().registerGlobal(AddPlayerToWorldEvent.class, this::onAddPlayerToWorld);
             getEventRegistry().registerGlobal(PlayerDisconnectEvent.class, this::onPlayerDisconnect);
 
-            getCommandRegistry().registerCommand(new ChangeMoneyCommand(languageManager, coinManager, economy, balanceHudService, commandTimeoutService));
-            getCommandRegistry().registerCommand(new ChangeAllMoneyCommand(languageManager, coinManager, economy, balanceHudService, commandTimeoutService));
-            getCommandRegistry().registerCommand(new ChangeHandMoneyCommand(languageManager, coinManager, economy, balanceHudService, commandTimeoutService));
+            getCommandRegistry().registerCommand(new ChangeMoneyCommand(languageManager, coinManager, economy, balanceHudService, commandTimeoutService, successAggregationService));
+            getCommandRegistry().registerCommand(new ChangeAllMoneyCommand(languageManager, coinManager, economy, balanceHudService, commandTimeoutService, successAggregationService));
+            getCommandRegistry().registerCommand(new ChangeHandMoneyCommand(languageManager, coinManager, economy, balanceHudService, commandTimeoutService, successAggregationService));
             getCommandRegistry().registerCommand(new ChangeHudOffCommand(languageManager, balanceHudService));
             getCommandRegistry().registerCommand(new ChangeHudOnCommand(languageManager, balanceHudService));
             getCommandRegistry().registerCommand(new ChangeHelpCommand(languageManager));
@@ -122,6 +126,9 @@ public final class EcoCoins extends JavaPlugin {
         if (commandTimeoutService != null) {
             new CommandTimeoutMovementEvent(commandTimeoutService).register(getEntityStoreRegistry());
         }
+        if (successAggregationService != null) {
+            new SuccessMessageAggregationEvent(successAggregationService).register(getEntityStoreRegistry());
+        }
         getLogger().at(Level.INFO).log("[EcoCoins] start()... interactionTrigger=" + COIN_INTERACTION_TRIGGER);
         getLogger().at(Level.INFO).log("[EcoCoins] start() OK.");
     }
@@ -130,6 +137,9 @@ public final class EcoCoins extends JavaPlugin {
     protected void shutdown() {
         if (commandTimeoutService != null) {
             commandTimeoutService.shutdown();
+        }
+        if (successAggregationService != null) {
+            successAggregationService.shutdown();
         }
         getLogger().at(Level.INFO).log("[EcoCoins] shutdown()");
     }
@@ -178,6 +188,9 @@ public final class EcoCoins extends JavaPlugin {
         }
         if (commandTimeoutService != null) {
             commandTimeoutService.cancelPending(event.getPlayerRef());
+        }
+        if (successAggregationService != null) {
+            successAggregationService.clear(event.getPlayerRef().getUuid());
         }
     }
 
