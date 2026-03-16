@@ -25,14 +25,16 @@ public final class CoinRedeemService {
     private final TheEconomyService economy;
     private final LanguageManager languageManager;
     private final BalanceHudService hudService;
+    private final SuccessMessageAggregationService successAggregationService;
     private final boolean debugLogs;
 
-    public CoinRedeemService(HytaleLogger logger, CoinManager coinManager, TheEconomyService economy, LanguageManager languageManager, BalanceHudService hudService, boolean debugLogs) {
+    public CoinRedeemService(HytaleLogger logger, CoinManager coinManager, TheEconomyService economy, LanguageManager languageManager, BalanceHudService hudService, SuccessMessageAggregationService successAggregationService, boolean debugLogs) {
         this.logger = logger;
         this.coinManager = coinManager;
         this.economy = economy;
         this.languageManager = languageManager;
         this.hudService = hudService;
+        this.successAggregationService = successAggregationService;
         this.debugLogs = debugLogs;
     }
 
@@ -110,7 +112,7 @@ public final class CoinRedeemService {
 
         playRedeemSound(player);
         debug("ok: canjeado itemId=" + itemId + " pay=" + coin.pay + " uuid=" + uuid + " (source=" + source + ")");
-        player.sendMessage(tr(player, "redeem.success", java.util.Map.of("pay", coin.pay)));
+        successAggregationService.onRedeemSuccess(player, player.getPlayerRef(), coin.pay);
         hudService.updateBalance(player, player.getPlayerRef());
         return true;
     }

@@ -5,6 +5,7 @@ import com.ecocoins.core.InventoryUtil;
 import com.ecocoins.core.LanguageManager;
 import com.ecocoins.core.CommandTimeoutService;
 import com.ecocoins.core.TheEconomyService;
+import com.ecocoins.core.SuccessMessageAggregationService;
 import com.ecocoins.hud.BalanceHudService;
 import com.ecocoins.model.CoinDefinition;
 import com.hypixel.hytale.component.Ref;
@@ -37,12 +38,13 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
     private final TheEconomyService economy;
     private final BalanceHudService hudService;
     private final CommandTimeoutService timeoutService;
+    private final SuccessMessageAggregationService successAggregationService;
 
     private final RequiredArg<String> moneyNameArg;
     @SuppressWarnings("unused")
     private final DefaultArg<Integer> amountDefaultArg;
 
-    public ChangeMoneyCommand(LanguageManager lang, CoinManager coins, TheEconomyService economy, BalanceHudService hudService, CommandTimeoutService timeoutService) {
+    public ChangeMoneyCommand(LanguageManager lang, CoinManager coins, TheEconomyService economy, BalanceHudService hudService, CommandTimeoutService timeoutService, SuccessMessageAggregationService successAggregationService) {
         super("change", "Convierte dinero virtual (TheEconomy) en monedas físicas (EcoCoins).", false);
 
         this.lang = lang;
@@ -50,6 +52,7 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
         this.economy = economy;
         this.hudService = hudService;
         this.timeoutService = timeoutService;
+        this.successAggregationService = successAggregationService;
 
         this.requirePermission(PERM_CHANGE_USE);
 
@@ -217,23 +220,7 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
         String primaryMoneyName = coin.money_name != null ? coin.money_name.primary : moneyName;
         String itemId = (coin.name_item == null || coin.name_item.isBlank()) ? "?" : coin.name_item;
 
-        String successTemplate = lang.tr(pLang, "command.change.success", Map.of(
-                "amount", amount,
-                "primary", primaryMoneyName,
-                "cost", cost
-        ));
-        String moneyNamePlaceholder = "{lang_moneyName}";
-        int moneyNameIndex = successTemplate.indexOf(moneyNamePlaceholder);
-
-        Message itemName = Message.translation("server.items." + itemId + ".name");
-        if (moneyNameIndex < 0) {
-            player.sendMessage(lang.rawToMsg(successTemplate));
-        } else {
-            String before = successTemplate.substring(0, moneyNameIndex);
-            String after = successTemplate.substring(moneyNameIndex + moneyNamePlaceholder.length());
-            applyLegacyStyleFromPrefix(itemName, before);
-            player.sendMessage(Message.join(lang.rawToMsg(before), itemName, lang.rawToMsg(after)));
-        }
+        successAggregationService.onChangeSuccess(player, playerRef, primaryMoneyName, itemId, amount, cost);
 
         hudService.updateBalance(player, playerRef);
     }
@@ -313,6 +300,7 @@ public final class ChangeMoneyCommand extends AbstractPlayerCommand {
         }
         return sb.toString();
     }
+
 
     private static void applyLegacyStyleFromPrefix(Message target, String prefix) {
         LegacyStyle style = resolveLegacyStyle(prefix);
